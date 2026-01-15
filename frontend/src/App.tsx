@@ -11,6 +11,7 @@ import MCPToolsPage from './pages/MCPToolsPage'
 import BrainPage from './pages/BrainPage'
 import SchedulePage from './pages/SchedulePage'
 import LearningPage from './pages/LearningPage'
+import GrowthPage from './pages/GrowthPage'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/brain" element={<BrainPage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/learning" element={<LearningPage />} />
+        <Route path="/growth" element={<GrowthPage />} />
       </Routes>
     </Router>
   )
