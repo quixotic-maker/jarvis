@@ -107,8 +107,8 @@ class ScheduleBase(BaseModel):
     end_time: Optional[datetime] = None
     location: Optional[str] = None
     attendees: Optional[List[str]] = None
-    priority: str = Field("medium", regex="^(low|medium|high)$")
-    event_type: str = Field("event", regex="^(meeting|task|reminder|event)$")
+    priority: str = Field("medium", pattern="^(low|medium|high)$")
+    event_type: str = Field("event", pattern="^(meeting|task|reminder|event)$")
 
 
 class ScheduleCreate(ScheduleBase):
@@ -124,8 +124,8 @@ class ScheduleUpdate(BaseModel):
     end_time: Optional[datetime] = None
     location: Optional[str] = None
     attendees: Optional[List[str]] = None
-    priority: Optional[str] = Field(None, regex="^(low|medium|high)$")
-    event_type: Optional[str] = Field(None, regex="^(meeting|task|reminder|event)$")
+    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
+    event_type: Optional[str] = Field(None, pattern="^(meeting|task|reminder|event)$")
     is_completed: Optional[bool] = None
 
 
@@ -137,6 +137,17 @@ class ScheduleResponse(ScheduleBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
+    @classmethod
+    def model_validate(cls, obj):
+        """自定义验证：转换attendees字符串为列表"""
+        if hasattr(obj, '__dict__'):
+            data = obj.__dict__.copy()
+            # 转换attendees字符串为列表
+            if 'attendees' in data and isinstance(data['attendees'], str):
+                data['attendees'] = [a.strip() for a in data['attendees'].split(',')] if data['attendees'] else None
+            return super().model_validate(data)
+        return super().model_validate(obj)
+    
     class Config:
         from_attributes = True
 
@@ -147,7 +158,7 @@ class TaskBase(BaseModel):
     """任务基础模型"""
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    priority: str = Field("medium", regex="^(low|medium|high)$")
+    priority: str = Field("medium", pattern="^(low|medium|high)$")
     due_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
 
@@ -161,10 +172,10 @@ class TaskUpdate(BaseModel):
     """更新任务"""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    priority: Optional[str] = Field(None, regex="^(low|medium|high)$")
+    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
     due_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
-    status: Optional[str] = Field(None, regex="^(pending|in_progress|completed|cancelled)$")
+    status: Optional[str] = Field(None, pattern="^(pending|in_progress|completed|cancelled)$")
 
 
 class TaskResponse(TaskBase):
@@ -176,6 +187,17 @@ class TaskResponse(TaskBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    
+    @classmethod
+    def model_validate(cls, obj):
+        """自定义验证：转换tags字符串为列表"""
+        if hasattr(obj, '__dict__'):
+            data = obj.__dict__.copy()
+            # 转换tags字符串为列表
+            if 'tags' in data and isinstance(data['tags'], str):
+                data['tags'] = [t.strip() for t in data['tags'].split(',')] if data['tags'] else None
+            return super().model_validate(data)
+        return super().model_validate(obj)
     
     class Config:
         from_attributes = True
@@ -239,7 +261,7 @@ class LearningPlanUpdate(BaseModel):
     due_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
     progress: Optional[int] = Field(None, ge=0, le=100)
-    status: Optional[str] = Field(None, regex="^(active|paused|completed|cancelled)$")
+    status: Optional[str] = Field(None, pattern="^(active|paused|completed|cancelled)$")
 
 
 class LearningPlanResponse(LearningPlanBase):
@@ -260,7 +282,7 @@ class LearningPlanResponse(LearningPlanBase):
 class LearningResourceBase(BaseModel):
     """学习资源基础模型"""
     title: str = Field(..., min_length=1, max_length=200)
-    resource_type: str = Field(..., regex="^(video|article|book|course|doc)$")
+    resource_type: str = Field(..., pattern="^(video|article|book|course|doc)$")
     url: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -274,7 +296,7 @@ class LearningResourceCreate(LearningResourceBase):
 class LearningResourceUpdate(BaseModel):
     """更新学习资源"""
     title: Optional[str] = None
-    resource_type: Optional[str] = Field(None, regex="^(video|article|book|course|doc)$")
+    resource_type: Optional[str] = Field(None, pattern="^(video|article|book|course|doc)$")
     url: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -298,7 +320,7 @@ class LearningResourceResponse(LearningResourceBase):
 class KnowledgeNodeBase(BaseModel):
     """知识节点基础模型"""
     title: str = Field(..., min_length=1, max_length=200)
-    node_type: str = Field(..., regex="^(concept|skill|project|resource|person)$")
+    node_type: str = Field(..., pattern="^(concept|skill|project|resource|person)$")
     description: Optional[str] = None
     tags: Optional[List[str]] = None
 
@@ -311,7 +333,7 @@ class KnowledgeNodeCreate(KnowledgeNodeBase):
 class KnowledgeNodeUpdate(BaseModel):
     """更新知识节点"""
     title: Optional[str] = None
-    node_type: Optional[str] = Field(None, regex="^(concept|skill|project|resource|person)$")
+    node_type: Optional[str] = Field(None, pattern="^(concept|skill|project|resource|person)$")
     description: Optional[str] = None
     tags: Optional[List[str]] = None
 
@@ -340,9 +362,9 @@ class KnowledgeEdgeCreate(BaseModel):
 
 class SystemPreferences(BaseModel):
     """系统偏好设置"""
-    theme: str = Field("dark", regex="^(light|dark|auto)$")
-    language: str = Field("zh-CN", regex="^(zh-CN|en-US|ja-JP)$")
-    font_size: str = Field("medium", regex="^(small|medium|large)$")
+    theme: str = Field("dark", pattern="^(light|dark|auto)$")
+    language: str = Field("zh-CN", pattern="^(zh-CN|en-US|ja-JP)$")
+    font_size: str = Field("medium", pattern="^(small|medium|large)$")
     sound_enabled: bool = True
     notifications_enabled: bool = True
     auto_save: bool = True
@@ -351,7 +373,7 @@ class SystemPreferences(BaseModel):
 class AgentPreferences(BaseModel):
     """Agent偏好设置"""
     default_agent: str = "coordinator"
-    response_speed: str = Field("balanced", regex="^(fast|balanced|quality)$")
+    response_speed: str = Field("balanced", pattern="^(fast|balanced|quality)$")
     creativity: int = Field(70, ge=0, le=100)
     max_tokens: int = Field(2000, ge=100, le=4000)
     temperature: float = Field(0.7, ge=0.0, le=1.0)
@@ -379,7 +401,7 @@ class SettingsResponse(BaseModel):
 
 class ChatMessage(BaseModel):
     """对话消息"""
-    role: str = Field(..., regex="^(user|assistant|system)$")
+    role: str = Field(..., pattern="^(user|assistant|system)$")
     content: str
     timestamp: Optional[datetime] = None
 

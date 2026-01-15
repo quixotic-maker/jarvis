@@ -29,8 +29,8 @@ async def get_tasks(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     user_id: str = Query("default_user", description="用户ID"),
-    status: Optional[str] = Query(None, regex="^(pending|in_progress|completed|cancelled)$", description="任务状态"),
-    priority: Optional[str] = Query(None, regex="^(low|medium|high)$", description="优先级"),
+    status: Optional[str] = Query(None, pattern="^(pending|in_progress|completed|cancelled)$", description="任务状态"),
+    priority: Optional[str] = Query(None, pattern="^(low|medium|high)$", description="优先级"),
     tag: Optional[str] = Query(None, description="标签筛选"),
     db: Session = Depends(get_db)
 ):

@@ -295,11 +295,15 @@ class Task(Base):
     __tablename__ = "tasks"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_input = Column(Text, nullable=False)  # 用户原始输入
-    task_type = Column(String(50), nullable=False)  # 任务类型：info_retrieval, schedule, notification等
-    status = Column(String(20), default="pending")  # pending, processing, completed, failed
-    assigned_agent = Column(String(50))  # 分配的Agent
-    result = Column(JSON, nullable=True)  # 任务结果（JSON格式）
+    user_id = Column(String(100), nullable=False, index=True, default="default_user")
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    priority = Column(String(20), default="medium")  # low, medium, high
+    status = Column(String(20), default="pending")  # pending, in_progress, completed, cancelled
+    due_date = Column(DateTime)
+    tags = Column(Text)  # 逗号分隔
+    progress = Column(Integer, default=0)  # 0-100
+    completed_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -309,11 +313,15 @@ class Schedule(Base):
     __tablename__ = "schedules"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(100), nullable=False, index=True, default="default_user")
     title = Column(String(200), nullable=False)
     description = Column(Text)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime)
     location = Column(String(200))
+    attendees = Column(Text)  # JSON字符串或逗号分隔
+    priority = Column(String(20), default="medium")  # low, medium, high
+    event_type = Column(String(20), default="event")  # meeting, task, reminder, event
     is_completed = Column(Boolean, default=False)
     reminder_sent = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
