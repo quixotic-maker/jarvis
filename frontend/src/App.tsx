@@ -12,6 +12,7 @@ import BrainPage from './pages/BrainPage'
 import SchedulePage from './pages/SchedulePage'
 import LearningPage from './pages/LearningPage'
 import GrowthPage from './pages/GrowthPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/growth" element={<GrowthPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </Router>
   )
