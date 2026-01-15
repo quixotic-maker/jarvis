@@ -214,9 +214,6 @@ const SettingsPage = () => {
       setIsSaving(false)
     }
   }
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 2000)
-  }
 
   // 渲染个人资料标签
   const renderProfileTab = () => (
