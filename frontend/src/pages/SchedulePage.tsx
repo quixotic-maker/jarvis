@@ -10,6 +10,7 @@ import {
   MapPin,
   Users,
   Loader2,
+  Video,
 } from 'lucide-react'
 import * as scheduleApi from '../api/schedule'
 import type { Schedule } from '../api/types'
@@ -47,7 +48,7 @@ const convertToEvent = (schedule: Schedule): ScheduleEvent => {
     startTime: startDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     endTime: endDate?.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) || '',
     type: schedule.event_type as any,
-    location: schedule.location,
+    location: schedule.location || undefined,
     attendees: schedule.attendees || [],
     priority: schedule.priority as any,
     color: colorMap[schedule.event_type] || 'blue',
@@ -115,7 +116,7 @@ export default function SchedulePage() {
         page_size: 100,
         user_id: 'default_user',
       })
-      setSchedules(response.data.data)
+      setSchedules(response.data)
     } catch (err: any) {
       setError(err.message || '加载日程失败')
       console.error('加载日程失败:', err)
@@ -411,20 +412,11 @@ export default function SchedulePage() {
                       <span>{event.startTime} - {event.endTime}</span>
                     </div>
 
-                    {/* 地点/在线 */}
-                    {(event.location || event.isOnline) && (
+                    {/* 地点 */}
+                    {event.location && (
                       <div className="flex items-center gap-2 text-sm text-slate-400">
-                        {event.isOnline ? (
-                          <>
-                            <Video className="w-4 h-4" />
-                            <span>线上会议</span>
-                          </>
-                        ) : (
-                          <>
-                            <MapPin className="w-4 h-4" />
-                            <span>{event.location}</span>
-                          </>
-                        )}
+                        <MapPin className="w-4 h-4" />
+                        <span>{event.location}</span>
                       </div>
                     )}
 
