@@ -10,6 +10,7 @@ import AgentsPage from './pages/AgentsPage'
 import MCPToolsPage from './pages/MCPToolsPage'
 import BrainPage from './pages/BrainPage'
 import SchedulePage from './pages/SchedulePage'
+import LearningPage from './pages/LearningPage'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/tools" element={<MCPToolsPage />} />
         <Route path="/brain" element={<BrainPage />} />
         <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/learning" element={<LearningPage />} />
       </Routes>
     </Router>
   )
