@@ -87,6 +87,7 @@ export default function ChatV3() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [showVoiceInput, setShowVoiceInput] = useState(false)
   const [activeAgent, setActiveAgent] = useState<string | null>(null)
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([])
 
   // 获取会话列表
   const { data: sessions = [] } = useQuery({
@@ -185,7 +186,10 @@ export default function ChatV3() {
       const response = await fetch(`http://localhost:8000/api/chat/${currentSessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          content,
+          selected_agents: selectedAgents.length > 0 ? selectedAgents : undefined
+        }),
         signal: abortControllerRef.current.signal,
       })
 
@@ -264,6 +268,19 @@ export default function ChatV3() {
   const handleQuickAction = (prompt: string) => {
     setInputValue(prompt)
     handleSend(prompt)
+  }
+
+  // Agent选择/取消选择
+  const handleAgentSelect = (agentId: string) => {
+    setSelectedAgents((prev) => {
+      if (prev.includes(agentId)) {
+        // 再次点击取消选择
+        return prev.filter((id) => id !== agentId)
+      } else {
+        // 添加到选择列表
+        return [...prev, agentId]
+      }
+    })
   }
 
   // 新建对话
@@ -421,16 +438,37 @@ export default function ChatV3() {
                 {/* 推荐Agent */}
                 <div>
                   <h2 className="text-sm font-medium text-slate-400 mb-4">
-                    推荐Agent
+                    推荐Agent {selectedAgents.length > 0 && `(已选 ${selectedAgents.length})`}
                   </h2>
                   <div className="grid gap-3">
-                    {featuredAgents.map((agent) => (
-                      <AgentCard
-                        key={agent.id}
-                        {...agent}
-                        onClick={() => handleQuickAction(`使用${agent.name}`)}
-                      />
-                    ))}
+                    {featuredAgents.map((agent) => {
+                      const isSelected = selectedAgents.includes(agent.id)
+                      return (
+                        <div
+                          key={agent.id}
+                          className={`relative transition-all ${
+                            isSelected
+                              ? 'ring-2 ring-emerald-500 rounded-xl'
+                              : ''
+                          }`}
+                        >
+                          <AgentCard
+                            {...agent}
+                            onClick={() => handleAgentSelect(agent.id)}
+                          />
+                          {isSelected && (
+                            <div className="absolute top-2 right-2">
+                              <div className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                已选
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

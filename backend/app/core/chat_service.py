@@ -251,15 +251,27 @@ class ChatService:
         self, 
         user_id: str, 
         message: str,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        selected_agents: Optional[List[str]] = None
     ):
-        """流式处理用户消息 - 实时输出"""
+        """流式处理用户消息 - 实时输出
+        
+        Args:
+            user_id: 用户ID
+            message: 用户消息
+            session_id: 会话ID
+            selected_agents: 用户选择的Agents列表，如果提供则优先使用这些Agents
+        """
         from typing import AsyncGenerator
         
         start_time = time.time()
         
         # 1. 获取或创建会话
         session = await self.get_or_create_session(session_id, user_id)
+        
+        # 记录用户选择的Agents（如果有）
+        if selected_agents:
+            logger.info(f"User selected agents: {selected_agents}")
         
         # 发送会话信息
         yield {"type": "session", "session_id": session.id}

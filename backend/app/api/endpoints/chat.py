@@ -27,8 +27,10 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     """对话请求"""
     message: str = Field(..., min_length=1, description="用户消息")
+    content: Optional[str] = Field(None, description="消息内容（兼容字段）")
     session_id: Optional[str] = Field(None, description="会话ID，不传则创建新会话")
     user_id: str = Field(default="default_user", description="用户ID")
+    selected_agents: Optional[List[str]] = Field(None, description="用户选择的Agent列表")
 
 
 class ChatResponseModel(BaseModel):
@@ -333,6 +335,57 @@ async def delete_session(session_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     
     return {"success": True, "message": "Session deleted"}
+
+
+@router.post("/{session_id}/messages", summary="发送消息到指定会话（流式）")
+async def send_message_to_session(session_id: str, request: ChatRequest, db: Session = Depends(get_db)):
+    """
+    向指定会话发送消息并获取流式响应
+    
+    支持：
+    - 用户选择的Agents（selected_agents）
+    - 主Agent自动调度其他Agents
+    - SSE流式输出
+    """
+    chat_service = ChatService(db)
+    
+    # 兼容处理：message 或 content
+    message_content = request.message or request.content
+    if not message_content:
+        raise HTTPException(status_code=400, detail="Message content is required")
+    
+    async def generate() -> AsyncGenerator[str, None]:
+        try:
+            # 发送开始事件
+            yield f"data: {{\"type\": \"start\", \"session_id\": \"{session_id}\"}}\n\n"
+            
+            # 如果用户选择了特定Agents，通知前端
+            if request.selected_agents:
+                yield f"data: {{\"type\": \"info\", \"content\": \"使用选中的Agents: {', '.join(request.selected_agents)}\"}}\n\n"
+            
+            # 获取流式响应
+            async for chunk in chat_service.chat_stream(
+                user_id=request.user_id,
+                message=message_content,
+                session_id=session_id,
+                selected_agents=request.selected_agents
+            ):
+                yield f"data: {json.dumps(chunk)}\n\n"
+                
+        except Exception as e:
+            yield f"data: {{\"type\": \"error\", \"content\": \"{str(e)}\"}}\n\n"
+        finally:
+            yield f"data: {{\"type\": \"done\"}}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 # ==================== 用户档案端点 ====================
