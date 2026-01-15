@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import MainLayout from '../components/layout/MainLayout'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
+import * as settingsApi from '../api/settings'
+import type { UserSettings } from '../api/types'
 import { 
   User, 
   Settings, 
@@ -34,7 +36,8 @@ import {
   Trash2,
   Plus,
   Check,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 
 interface SettingsTab {
@@ -82,6 +85,8 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // 用户资料
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -119,6 +124,46 @@ const SettingsPage = () => {
     enableVoice: true,
     enableMemory: true
   })
+  
+  // 加载设置
+  useEffect(() => {
+    loadSettings()
+  }, [])
+  
+  const loadSettings = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await settingsApi.getSettings('default_user')
+      const settings = response.data.data.settings
+      
+      // 更新系统设置
+      setSystemPrefs({
+        theme: settings.system.theme as any,
+        language: settings.system.language as any,
+        fontSize: settings.system.font_size as any,
+        soundEnabled: settings.system.sound_enabled,
+        notificationsEnabled: settings.system.notifications_enabled,
+        autoSave: settings.system.auto_save,
+      })
+      
+      // 更新Agent设置
+      setAgentSettings({
+        defaultAgent: settings.agent.default_agent,
+        responseSpeed: settings.agent.response_speed as any,
+        creativity: settings.agent.creativity,
+        maxTokens: settings.agent.max_tokens,
+        temperature: settings.agent.temperature,
+        enableVoice: settings.agent.enable_voice,
+        enableMemory: settings.agent.enable_memory,
+      })
+    } catch (err: any) {
+      setError(err.message || '加载设置失败')
+      console.error('加载设置失败:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // 标签页配置
   const tabs: SettingsTab[] = [
@@ -135,9 +180,40 @@ const SettingsPage = () => {
   // 保存设置
   const handleSave = async () => {
     setIsSaving(true)
-    // 模拟保存
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
+    setError(null)
+    try {
+      await settingsApi.updateSettings({
+        user_id: 'default_user',
+        settings: {
+          system: {
+            theme: systemPrefs.theme,
+            language: systemPrefs.language,
+            font_size: systemPrefs.fontSize,
+            sound_enabled: systemPrefs.soundEnabled,
+            notifications_enabled: systemPrefs.notificationsEnabled,
+            auto_save: systemPrefs.autoSave,
+          },
+          agent: {
+            default_agent: agentSettings.defaultAgent,
+            response_speed: agentSettings.responseSpeed,
+            creativity: agentSettings.creativity,
+            max_tokens: agentSettings.maxTokens,
+            temperature: agentSettings.temperature,
+            enable_voice: agentSettings.enableVoice,
+            enable_memory: agentSettings.enableMemory,
+          }
+        }
+      }, 'default_user')
+      
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
+    } catch (err: any) {
+      setError(err.message || '保存失败')
+      console.error('保存设置失败:', err)
+    } finally {
+      setIsSaving(false)
+    }
+  }
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 2000)
   }
