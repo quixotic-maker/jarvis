@@ -3,13 +3,71 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* ========== Jarvis V3 设计系统 ========== */
+  
+  /* 字体 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", 
+               "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", 
+               Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0f172a;
+  /* 背景色 */
+  --bg-primary: #0f172a;        /* 主背景 */
+  --bg-secondary: #1e293b;      /* 次级背景 */
+  --bg-tertiary: #334155;       /* 卡片背景 */
+  --bg-hover: #475569;          /* 悬停态 */
+  
+  /* 文字色 */
+  --text-primary: #f1f5f9;      /* 主文字 */
+  --text-secondary: #cbd5e1;    /* 次级文字 */
+  --text-tertiary: #94a3b8;     /* 辅助文字 */
+  --text-disabled: #64748b;     /* 禁用文字 */
+  
+  /* 品牌色 */
+  --brand-primary: #10b981;     /* 翠绿 - Jarvis主色 */
+  --brand-secondary: #06b6d4;   /* 青色 - 强调色 */
+  --brand-accent: #8b5cf6;      /* 紫色 - 点缀色 */
+  
+  /* 功能色 */
+  --success: #10b981;           /* 成功 */
+  --warning: #f59e0b;           /* 警告 */
+  --error: #ef4444;             /* 错误 */
+  --info: #3b82f6;              /* 信息 */
+  
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --gradient-secondary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+  
+  /* 圆角 */
+  --radius-sm: 0.25rem;         /* 4px */
+  --radius-md: 0.5rem;          /* 8px */
+  --radius-lg: 0.75rem;         /* 12px */
+  --radius-xl: 1rem;            /* 16px */
+  --radius-2xl: 1.5rem;         /* 24px */
+  --radius-full: 9999px;        /* 完全圆角 */
+  
+  /* 动画 */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,26 +78,233 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: linear-gradient(to bottom right, #0f172a, #1e293b);
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* 自定义滚动条 */
+/* ========== 自定义动画 ========== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideRight {
+  from { 
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+  }
+}
+
+/* ========== 自定义滚动条 ========== */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: var(--text-disabled);
+}
+
+/* Firefox滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-hover) var(--bg-secondary);
+}
+
+/* ========== 工具类 ========== */
+
+/* 渐变文字 */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 毛玻璃效果 */
+.glass {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* 发光效果 */
+.glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+  transition: box-shadow var(--duration-normal) var(--ease-out);
+}
+
+/* 平滑过渡 */
+.transition-smooth {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+/* 卡片悬浮效果 */
+.card-hover {
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1),
+              0 10px 10px -5px rgba(16, 185, 129, 0.04);
+}
+
+/* 按钮悬浮效果 */
+.button-hover {
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.button-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.3);
+}
+
+.button-hover:active {
+  transform: translateY(0);
+}
+
+/* 焦点样式 */
+.focus-ring:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: var(--brand-primary);
+  ring-offset: 2px;
+}
+
+/* Markdown样式 */
+.prose {
+  color: var(--text-primary);
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.prose a {
+  color: var(--brand-secondary);
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: var(--brand-primary);
+}
+
+.prose code {
+  color: #ec4899;
+  background-color: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875em;
+}
+
+.prose pre {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.prose blockquote {
+  border-left: 4px solid var(--brand-primary);
+  padding-left: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.prose th, .prose td {
+  border: 1px solid var(--bg-tertiary);
+  padding: 0.5rem 1rem;
+  text-align: left;
+}
+
+.prose th {
+  background-color: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+/* ========== 响应式辅助类 ========== */
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hide-tablet {
+    display: none;
+  }
+}
+
+@media (min-width: 1025px) {
+  .hide-desktop {
+    display: none;
+  }
 }
