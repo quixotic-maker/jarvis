@@ -6,6 +6,7 @@
 - 协调意图识别
 - 调用Agent执行任务
 - 生成自然语言回复
+- 人格化交互
 """
 import json
 import logging
@@ -20,6 +21,7 @@ from sqlalchemy import desc
 from app.db.models import Session, Message
 from app.core.memory import MemoryManager
 from app.core.config import settings
+from app.core.persona_engine import get_persona_engine, Emotion
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,7 @@ class ChatService:
         self.memory_manager = MemoryManager(db)
         self.llm_enabled = bool(settings.DEEPSEEK_API_KEY)
         self._agents = None  # 延迟加载
+        self.persona = get_persona_engine()  # 人格引擎
     
     @property
     def agents(self):
@@ -84,6 +87,8 @@ class ChatService:
         from app.agents.travel_agent import TravelAgent
         from app.agents.health_agent import HealthAgent
         from app.agents.recommendation_agent import RecommendationAgent
+        from app.agents.mcp_agent import MCPAgent
+        from app.agents.map_agent import MapAgent
         
         return {
             "coordinator": CoordinatorAgent(self.db),
@@ -101,7 +106,9 @@ class ChatService:
             "news": NewsAgent(),
             "travel": TravelAgent(),
             "health": HealthAgent(),
-            "recommendation": RecommendationAgent()
+            "recommendation": RecommendationAgent(),
+            "mcp": MCPAgent(),
+            "map": MapAgent(),
         }
     
     # ==================== 会话管理 ====================

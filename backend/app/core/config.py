@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000", 
         "http://localhost:3001", 
+        "http://localhost:3002",
         "http://localhost:5173"
     ]
     
@@ -55,7 +56,20 @@ class Settings(BaseSettings):
     
     # ========== 新闻API配置 ==========
     # NewsAPI (https://newsapi.org/)
-    NEWS_API_KEY: str = "f06510cceb4743b6a0853af6721ad6bf"
+    NEWS_API_KEY: str = ""
+    
+    # ========== 地图API配置 ==========
+    # 高德地图 (https://lbs.amap.com/)
+    AMAP_API_KEY: str = ""  # 高德地图Web API Key
+    
+    # ========== 翻译API配置 ==========
+    # 百度翻译 (https://fanyi-api.baidu.com/)
+    BAIDU_TRANSLATE_APPID: str = ""
+    BAIDU_TRANSLATE_SECRET: str = ""
+    
+    # ========== 股票/财经API ==========
+    # 东方财富
+    EASTMONEY_API_KEY: str = ""
     
     class Config:
         env_file = ".env"

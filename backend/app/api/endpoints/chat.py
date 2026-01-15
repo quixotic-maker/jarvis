@@ -202,6 +202,67 @@ async def quick_chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/greeting", summary="获取主动问候")
+async def get_greeting(
+    user_id: str = Query(default="default_user"),
+    db: Session = Depends(get_db)
+):
+    """
+    获取基于时间和上下文的主动问候
+    
+    返回：
+    - 时间问候语
+    - 今日概览（日程、待办、天气）
+    - 推荐的快捷操作
+    """
+    from app.core.persona_engine import get_persona_engine
+    
+    persona = get_persona_engine()
+    
+    # 获取问候语
+    greeting = persona.get_greeting(is_first_interaction=True)
+    
+    # 获取快捷操作
+    quick_actions = persona.get_quick_actions()
+    
+    # 获取时间段信息
+    time_of_day = persona.get_time_of_day().value
+    
+    return {
+        "greeting": greeting,
+        "time_of_day": time_of_day,
+        "quick_actions": quick_actions,
+        "proactive_message": persona.get_proactive_message({})
+    }
+
+
+@router.get("/mcp/tools", summary="获取可用的MCP工具")
+async def get_mcp_tools():
+    """获取所有可用的MCP工具列表"""
+    from app.core.mcp_tools import get_mcp_manager
+    
+    mcp = get_mcp_manager()
+    return {
+        "tools": mcp.list_tools(),
+        "description": mcp.get_tools_description()
+    }
+
+
+@router.post("/mcp/execute", summary="执行MCP工具")
+async def execute_mcp_tool(
+    tool_name: str,
+    arguments: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """直接执行MCP工具"""
+    from app.core.mcp_tools import get_mcp_manager
+    
+    mcp = get_mcp_manager()
+    result = await mcp.execute_tool(tool_name, **arguments)
+    
+    return result.to_dict()
+
+
 # ==================== 会话管理端点 ====================
 
 @router.get("/sessions", response_model=List[SessionModel], summary="获取会话列表")
