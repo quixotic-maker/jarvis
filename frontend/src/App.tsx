@@ -8,6 +8,7 @@ import Schedules from './pages/Schedules'
 import Agents from './pages/Agents'
 import AgentsPage from './pages/AgentsPage'
 import MCPToolsPage from './pages/MCPToolsPage'
+import BrainPage from './pages/BrainPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/agents-old" element={<Agents />} />
         <Route path="/agents" element={<AgentsPage />} />
         <Route path="/tools" element={<MCPToolsPage />} />
+        <Route path="/brain" element={<BrainPage />} />
       </Routes>
     </Router>
   )
