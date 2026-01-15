@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MainLayout } from '../components/layout'
 import { Card, Badge, Button, Modal } from '../components/ui'
 import {
@@ -9,67 +9,52 @@ import {
   Clock,
   MapPin,
   Users,
-  Video,
-  AlertCircle,
+  Loader2,
 } from 'lucide-react'
+import * as scheduleApi from '../api/schedule'
+import type { Schedule } from '../api/types'
 
-// 日程事件类型
+// 日程事件类型（转换用）
 interface ScheduleEvent {
-  id: string
+  id: number
   title: string
   startTime: string
   endTime: string
   type: 'meeting' | 'task' | 'reminder' | 'event'
   location?: string
   attendees?: string[]
-  isOnline?: boolean
   priority?: 'high' | 'medium' | 'low'
   color: string
+  description?: string
+  isCompleted: boolean
 }
 
-// 示例日程数据
-const events: ScheduleEvent[] = [
-  {
-    id: '1',
-    title: '团队周会',
-    startTime: '09:00',
-    endTime: '10:00',
-    type: 'meeting',
-    location: '会议室A',
-    attendees: ['张三', '李四', '王五'],
-    priority: 'high',
-    color: 'emerald',
-  },
-  {
-    id: '2',
-    title: '项目评审',
-    startTime: '14:00',
-    endTime: '16:00',
-    type: 'meeting',
-    isOnline: true,
-    attendees: ['产品经理', '技术总监'],
-    priority: 'high',
-    color: 'blue',
-  },
-  {
-    id: '3',
-    title: '完成设计稿',
-    startTime: '10:30',
-    endTime: '12:00',
-    type: 'task',
-    priority: 'medium',
-    color: 'purple',
-  },
-  {
-    id: '4',
-    title: '客户回访',
-    startTime: '16:30',
-    endTime: '17:30',
-    type: 'reminder',
-    priority: 'low',
-    color: 'orange',
-  },
-]
+// 将API数据转换为UI数据
+const convertToEvent = (schedule: Schedule): ScheduleEvent => {
+  const startDate = new Date(schedule.start_time)
+  const endDate = schedule.end_time ? new Date(schedule.end_time) : null
+  
+  const colorMap: Record<string, string> = {
+    meeting: 'emerald',
+    task: 'purple',
+    reminder: 'orange',
+    event: 'blue',
+  }
+  
+  return {
+    id: schedule.id,
+    title: schedule.title,
+    startTime: startDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    endTime: endDate?.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) || '',
+    type: schedule.event_type as any,
+    location: schedule.location,
+    attendees: schedule.attendees || [],
+    priority: schedule.priority as any,
+    color: colorMap[schedule.event_type] || 'blue',
+    description: schedule.description || undefined,
+    isCompleted: schedule.is_completed,
+  }
+}
 
 // 生成日历日期
 const generateCalendarDays = (year: number, month: number) => {
@@ -98,6 +83,11 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month')
   const [showAddModal, setShowAddModal] = useState(false)
+  
+  // API状态
+  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -110,6 +100,32 @@ export default function SchedulePage() {
 
   const weekDays = ['日', '一', '二', '三', '四', '五', '六']
   const calendarDays = generateCalendarDays(year, month)
+  
+  // 加载日程数据
+  useEffect(() => {
+    loadSchedules()
+  }, [currentDate])
+  
+  const loadSchedules = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await scheduleApi.getSchedules({
+        page: 1,
+        page_size: 100,
+        user_id: 'default_user',
+      })
+      setSchedules(response.data.data)
+    } catch (err: any) {
+      setError(err.message || '加载日程失败')
+      console.error('加载日程失败:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // 转换为事件格式
+  const events = schedules.map(convertToEvent)
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1))
@@ -144,9 +160,28 @@ export default function SchedulePage() {
 
   // 获取当天的日程
   const todayEvents = events.filter((event) => {
-    // 这里应该根据selectedDate过滤，简化处理
-    return true
+    const schedule = schedules.find(s => s.id === event.id)
+    if (!schedule) return false
+    
+    const eventDate = new Date(schedule.start_time)
+    return (
+      eventDate.getDate() === selectedDate.getDate() &&
+      eventDate.getMonth() === selectedDate.getMonth() &&
+      eventDate.getFullYear() === selectedDate.getFullYear()
+    )
   })
+  
+  // 获取某天的日程数量
+  const getDayEventCount = (day: number) => {
+    return schedules.filter(schedule => {
+      const eventDate = new Date(schedule.start_time)
+      return (
+        eventDate.getDate() === day &&
+        eventDate.getMonth() === month &&
+        eventDate.getFullYear() === year
+      )
+    }).length
+  }
 
   return (
     <MainLayout
@@ -280,9 +315,9 @@ export default function SchedulePage() {
                         </div>
                         
                         {/* 日程指示点 */}
-                        {day <= 15 && (
+                        {getDayEventCount(day) > 0 && (
                           <div className="flex flex-wrap gap-1">
-                            {[...Array(Math.min(3, Math.floor(Math.random() * 4)))].map((_, i) => (
+                            {[...Array(Math.min(3, getDayEventCount(day)))].map((_, i) => (
                               <div
                                 key={i}
                                 className="w-1.5 h-1.5 rounded-full bg-emerald-400"
@@ -320,7 +355,23 @@ export default function SchedulePage() {
               </h4>
             </div>
 
-            {todayEvents.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 text-emerald-500 mx-auto mb-3 animate-spin" />
+                <p className="text-sm text-slate-500">加载中...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-sm text-red-400 mb-4">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadSchedules}
+                >
+                  重试
+                </Button>
+              </div>
+            ) : todayEvents.length === 0 ? (
               <div className="text-center py-12">
                 <CalendarIcon className="w-12 h-12 text-slate-700 mx-auto mb-3" />
                 <p className="text-sm text-slate-500">今天还没有日程</p>
