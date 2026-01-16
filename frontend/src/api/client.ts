@@ -358,7 +358,7 @@ export const knowledgeAPI = {
       }),
     
     get: (nodeId: number) =>
-      api.get<BaseResponse<KnowledgeNode>>(\`/v2/knowledge/nodes/\${nodeId}\`),
+      api.get<BaseResponse<KnowledgeNode>>(`/v2/knowledge/nodes/${nodeId}`),
     
     create: (data: {
       label: string
@@ -377,10 +377,10 @@ export const knowledgeAPI = {
       tags?: string[]
       metadata?: Record<string, any>
     }) =>
-      api.put<BaseResponse<KnowledgeNode>>(\`/v2/knowledge/nodes/\${nodeId}\`, data),
+      api.put<BaseResponse<KnowledgeNode>>(`/v2/knowledge/nodes/${nodeId}`, data),
     
     delete: (nodeId: number) =>
-      api.delete<BaseResponse<null>>(\`/v2/knowledge/nodes/\${nodeId}\`),
+      api.delete<BaseResponse<null>>(`/v2/knowledge/nodes/${nodeId}`),
   },
 
   // 知识连接
@@ -400,7 +400,7 @@ export const knowledgeAPI = {
       api.post<BaseResponse<Connection>>('/v2/knowledge/connections', data),
     
     delete: (connectionId: number) =>
-      api.delete<BaseResponse<null>>(\`/v2/knowledge/connections/\${connectionId}\`),
+      api.delete<BaseResponse<null>>(`/v2/knowledge/connections/${connectionId}`),
   },
 
   // 知识图谱
@@ -413,5 +413,135 @@ export const knowledgeAPI = {
   search: (query: string, userId: string = 'default_user') =>
     api.get<BaseResponse<KnowledgeNode[]>>('/v2/knowledge/search', {
       params: { query, user_id: userId }
+    }),
+}
+
+// ==================== Agents管理 API ====================
+
+export interface AgentInfo {
+  id: string
+  name: string
+  description: string
+  category: string
+  category_label: string
+  status: 'idle' | 'busy' | 'error'
+  last_active: string
+  capabilities: string[]
+  total_executions: number
+  success_rate: number
+  avg_response_time: number
+}
+
+export interface AgentExecution {
+  id: number
+  agent_name: string
+  task_type: string
+  input_data: Record<string, any>
+  output_data: Record<string, any> | null
+  status: 'success' | 'failed' | 'running'
+  execution_time: number
+  error_message: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+export interface AgentStats {
+  total_agents: number
+  active_agents: number
+  total_executions: number
+  success_rate: number
+  avg_response_time: number
+  executions_by_category: Record<string, number>
+  executions_today: number
+}
+
+export const agentsAPI = {
+  list: (category?: string, status?: string, search?: string) =>
+    api.get<BaseResponse<AgentInfo[]>>('/v2/agents/list', {
+      params: { category, status, search }
+    }),
+  
+  get: (agentId: string) =>
+    api.get<BaseResponse<AgentInfo>>(`/v2/agents/${agentId}`),
+  
+  executions: (agentName: string, skip: number = 0, limit: number = 20) =>
+    api.get<PaginatedResponse<AgentExecution>>(`/v2/agents/${agentName}/executions`, {
+      params: { skip, limit }
+    }),
+  
+  stats: () =>
+    api.get<BaseResponse<AgentStats>>('/v2/agents/stats/overview'),
+}
+
+// ==================== 成长追踪 API ====================
+
+export interface DailyStats {
+  date: string
+  tasks_completed: number
+  study_minutes: number
+  agents_used: number
+  knowledge_added: number
+}
+
+export interface Achievement {
+  id: number
+  title: string
+  description: string
+  icon: string
+  category: string
+  progress: number
+  total: number
+  current: number
+  unlocked: boolean
+  unlocked_at: string | null
+}
+
+export interface GrowthOverview {
+  total_days: number
+  total_tasks: number
+  total_study_hours: number
+  total_knowledge_nodes: number
+  achievements_unlocked: number
+  current_streak: number
+  longest_streak: number
+  level: number
+  level_progress: number
+}
+
+export interface ActivityHeatmap {
+  date: string
+  activity_count: number
+  intensity: 'none' | 'low' | 'medium' | 'high'
+}
+
+export const growthAPI = {
+  overview: (userId: string = 'default_user') =>
+    api.get<BaseResponse<GrowthOverview>>('/v2/growth/overview', {
+      params: { user_id: userId }
+    }),
+  
+  dailyStats: (userId: string = 'default_user', startDate?: string, endDate?: string) =>
+    api.get<BaseResponse<DailyStats[]>>('/v2/growth/daily-stats', {
+      params: { user_id: userId, start_date: startDate, end_date: endDate }
+    }),
+  
+  achievements: (userId: string = 'default_user', category?: string, unlockedOnly: boolean = false) =>
+    api.get<BaseResponse<Achievement[]>>('/v2/growth/achievements', {
+      params: { user_id: userId, category, unlocked_only: unlockedOnly }
+    }),
+  
+  activityHeatmap: (userId: string = 'default_user', year: number = 2026) =>
+    api.get<BaseResponse<ActivityHeatmap[]>>('/v2/growth/activity-heatmap', {
+      params: { user_id: userId, year }
+    }),
+  
+  streak: (userId: string = 'default_user') =>
+    api.get<BaseResponse<any>>('/v2/growth/streak', {
+      params: { user_id: userId }
+    }),
+  
+  checkIn: (userId: string = 'default_user') =>
+    api.post<BaseResponse<any>>('/v2/growth/check-in', null, {
+      params: { user_id: userId }
     }),
 }

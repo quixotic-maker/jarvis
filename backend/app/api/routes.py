@@ -10,9 +10,10 @@ from app.api.endpoints import (
     chat,
     settings,
     learning,
-    knowledge
+    knowledge,
+    growth
 )
-from app.api.endpoints import tasks_v2  # 新版tasks API
+from app.api.endpoints import tasks_v2, agents_management  # 新版API
 
 api_router = APIRouter()
 
@@ -25,6 +26,8 @@ api_router.include_router(schedules.router, prefix="/v2/schedules", tags=["sched
 api_router.include_router(settings.router, prefix="/v2/settings", tags=["settings-v2"])
 api_router.include_router(learning.router, prefix="/v2/learning", tags=["learning-v2"])
 api_router.include_router(knowledge.router, prefix="/v2/knowledge", tags=["knowledge-v2"])
+api_router.include_router(agents_management.router, prefix="/v2/agents", tags=["agents-v2"])
+api_router.include_router(growth.router, prefix="/v2/growth", tags=["growth-v2"])
 
 # 其他端点路由（保留旧版兼容）
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])

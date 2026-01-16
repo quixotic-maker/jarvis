@@ -212,32 +212,6 @@ export default function LearningPage() {
                   </Card>
                 ))
               )}
-                          style={{ width: `${plan.progress}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>
-                          {plan.completedTasks}/{plan.tasks} 任务完成
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {plan.dueDate}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 操作按钮 */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-700">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        查看详情
-                      </Button>
-                      <Button variant="primary" size="sm" className="flex-1">
-                        继续学习
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
             </div>
           </div>
 
