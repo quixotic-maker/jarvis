@@ -1,4 +1,11 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
+
+// Toast处理函数将在外部注入
+let toastHandler: ((type: string, title: string, message?: string) => void) | null = null
+
+export function setToastHandler(handler: (type: string, title: string, message?: string) => void) {
+  toastHandler = handler
+}
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
@@ -22,8 +29,43 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  (error: AxiosError) => {
     console.error('API Error:', error)
+    
+    // 使用Toast显示错误
+    if (toastHandler) {
+      let title = '请求失败'
+      let message = '未知错误'
+      
+      if (error.response) {
+        // 服务器返回了错误状态码
+        const status = error.response.status
+        const data = error.response.data as any
+        
+        if (status === 404) {
+          title = '资源不存在'
+          message = '请求的资源未找到'
+        } else if (status === 422) {
+          title = '请求参数错误'
+          message = data?.detail?.[0]?.msg || '请检查输入的数据'
+        } else if (status === 500) {
+          title = '服务器错误'
+          message = '服务器内部错误，请稍后重试'
+        } else {
+          message = data?.message || data?.detail || `错误代码: ${status}`
+        }
+      } else if (error.request) {
+        // 请求已发送但没有收到响应
+        title = '网络错误'
+        message = '无法连接到服务器，请检查网络连接'
+      } else {
+        // 请求配置出错
+        message = error.message
+      }
+      
+      toastHandler('error', title, message)
+    }
+    
     return Promise.reject(error)
   }
 )
