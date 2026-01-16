@@ -1,6 +1,8 @@
 """
 Knowledge Base API Endpoints
 提供知识库管理的RESTful API
+
+API文档: /docs
 """
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
@@ -16,8 +18,13 @@ from app.rag import (
     RetrievalMode
 )
 from app.utils.logger import logger
+from app.utils.cache import get_search_cache
 
-router = APIRouter(prefix="/api/knowledge-base", tags=["知识库"])
+router = APIRouter(
+    prefix="/api/knowledge-base",
+    tags=["知识库"],
+    responses={404: {"description": "知识库未找到"}}
+)
 
 
 # ============================================================================
@@ -82,13 +89,24 @@ class BatchImportRequest(BaseModel):
 # API Endpoints
 # ============================================================================
 
-@router.get("/", response_model=List[str])
+@router.get(
+    "/",
+    response_model=List[str],
+    summary="列出所有知识库",
+    description="获取系统中所有已创建的知识库名称列表",
+    response_description="知识库名称列表"
+)
 async def list_knowledge_bases_api():
     """
     列出所有知识库
     
     Returns:
         List[str]: 知识库名称列表
+        
+    Example:
+        ```json
+        ["python_docs", "project_knowledge", "research_papers"]
+        ```
     """
     try:
         kb_names = list_knowledge_bases()
@@ -98,16 +116,33 @@ async def list_knowledge_bases_api():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=KnowledgeBaseInfo)
+@router.post(
+    "/",
+    response_model=KnowledgeBaseInfo,
+    summary="创建知识库",
+    description="创建新的知识库或获取已存在的知识库信息",
+    response_description="知识库详细信息",
+    status_code=201
+)
 async def create_knowledge_base(request: KnowledgeBaseCreate):
     """
     创建或获取知识库
     
     Args:
-        request: 创建请求
+        request: 创建请求，包含知识库名称、描述、分块参数等
         
     Returns:
         KnowledgeBaseInfo: 知识库信息
+        
+    Example Request:
+        ```json
+        {
+            "name": "python_docs",
+            "description": "Python官方文档",
+            "chunk_size": 800,
+            "chunk_overlap": 150
+        }
+        ```
     """
     try:
         kb = get_knowledge_base(
@@ -225,8 +260,27 @@ async def search_documents(kb_name: str, request: SearchRequest):
         
     Returns:
         List[SearchResult]: 搜索结果
+        
+    Note:
+        搜索结果会被缓存5分钟以提高性能
     """
     try:
+        # 构建缓存键
+        cache = get_search_cache()
+        cache_key = {
+            "kb_name": kb_name,
+            "query": request.query,
+            "mode": request.mode,
+            "k": request.k,
+            "filter": request.filter_metadata
+        }
+        
+        # 尝试从缓存获取
+        cached_results = cache.get(cache_key)
+        if cached_results is not None:
+            logger.info(f"缓存命中: {kb_name}/{request.query[:30]}")
+            return cached_results
+        
         kb = get_knowledge_base(kb_name)
         
         # 转换模式
@@ -255,6 +309,9 @@ async def search_documents(kb_name: str, request: SearchRequest):
                 rank=result.rank,
                 metadata=result.document.metadata
             ))
+        
+        # 缓存结果
+        cache.set(cache_key, search_results, ttl=300)  # 5分钟缓存
         
         return search_results
     except Exception as e:
@@ -421,3 +478,37 @@ async def get_knowledge_base_stats(kb_name: str):
     except Exception as e:
         logger.error(f"获取统计失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# 缓存管理端点
+# ============================================================================
+
+@router.get("/cache/stats")
+async def get_cache_stats():
+    """
+    获取缓存统计信息
+    
+    Returns:
+        Dict: 缓存统计数据
+    """
+    cache = get_search_cache()
+    return cache.stats()
+
+
+@router.post("/cache/clear")
+async def clear_cache():
+    """
+    清空所有缓存
+    
+    Returns:
+        Dict: 清空结果
+    """
+    cache = get_search_cache()
+    old_size = cache.size()
+    cache.clear()
+    return {
+        "success": True,
+        "cleared_entries": old_size,
+        "message": f"已清空 {old_size} 个缓存条目"
+    }
