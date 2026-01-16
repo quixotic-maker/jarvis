@@ -201,6 +201,38 @@ curl -X POST http://localhost:8000/api/v2/llm/count-tokens \
 
 ## 🔧 Provider详解
 
+### DeepSeek Provider ⭐ 推荐
+
+**支持的模型**:
+- deepseek-chat (通用对话模型)
+- deepseek-coder (代码专用模型)
+
+**特性**:
+- ✅ 兼容OpenAI API格式
+- ✅ **极高性价比**（约为GPT-3.5的1/5成本）
+- ✅ 32K上下文窗口
+- ✅ 中文能力强
+- ✅ 精确的token计数（使用tiktoken）
+- ✅ 流式对话支持
+
+**定价**（每1000 tokens）:
+- deepseek-chat: $0.00014 (输入) / $0.00028 (输出)
+- deepseek-coder: $0.00014 (输入) / $0.00028 (输出)
+- **约¥1/百万tokens** - 性价比之王！
+
+**配置方法**:
+```env
+# 在.env中配置DeepSeek
+DEEPSEEK_API_KEY=sk-your-deepseek-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+
+# 使用OpenAI provider调用DeepSeek
+DEFAULT_PROVIDER=OPENAI
+```
+
+系统会自动检测：如果配置了`DEEPSEEK_API_KEY`，OpenAI provider会优先使用DeepSeek配置。
+
 ### OpenAI Provider
 
 **支持的模型**:

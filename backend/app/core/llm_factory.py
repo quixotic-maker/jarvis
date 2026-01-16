@@ -84,11 +84,19 @@ class ProviderFactory:
         }
         
         if provider_type == LLMProviderType.OPENAI:
-            config.update({
-                "api_key": llm_config.openai_api_key,
-                "base_url": llm_config.openai_base_url,
-                "model": llm_config.openai_model,
-            })
+            # 如果配置了DeepSeek，优先使用DeepSeek配置
+            if llm_config.deepseek_api_key:
+                config.update({
+                    "api_key": llm_config.deepseek_api_key,
+                    "base_url": llm_config.deepseek_base_url,
+                    "model": llm_config.deepseek_model,
+                })
+            else:
+                config.update({
+                    "api_key": llm_config.openai_api_key,
+                    "base_url": llm_config.openai_base_url,
+                    "model": llm_config.openai_model,
+                })
         elif provider_type == LLMProviderType.ANTHROPIC:
             config.update({
                 "api_key": llm_config.anthropic_api_key,

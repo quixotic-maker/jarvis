@@ -21,12 +21,19 @@ class LLMConfig(BaseSettings):
     # 默认提供商
     default_provider: LLMProviderType = LLMProviderType.OPENAI
     
-    # OpenAI配置
+    # OpenAI配置（也用于DeepSeek等兼容OpenAI API的服务）
     openai_api_key: Optional[str] = None
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-3.5-turbo"
     openai_temperature: float = 0.7
     openai_max_tokens: int = 2000
+    
+    # DeepSeek配置（使用OpenAI兼容接口）
+    deepseek_api_key: Optional[str] = None
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-chat"
+    deepseek_temperature: float = 0.7
+    deepseek_max_tokens: int = 2000
     
     # Anthropic配置
     anthropic_api_key: Optional[str] = None
@@ -55,10 +62,17 @@ class LLMConfig(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的字段
 
 
 class ModelConfig:
     """模型配置数据类"""
+    
+    # DeepSeek模型价格（每1000 tokens，USD）- 性价比极高！
+    DEEPSEEK_PRICING = {
+        "deepseek-chat": {"input": 0.00014, "output": 0.00028},  # ¥1/百万tokens
+        "deepseek-coder": {"input": 0.00014, "output": 0.00028},
+    }
     
     # OpenAI模型价格（每1000 tokens，USD）
     OPENAI_PRICING = {
@@ -76,6 +90,8 @@ class ModelConfig:
     
     # 模型上下文长度
     CONTEXT_LENGTHS = {
+        "deepseek-chat": 32768,
+        "deepseek-coder": 16384,
         "gpt-4": 8192,
         "gpt-4-turbo": 128000,
         "gpt-3.5-turbo": 16385,
@@ -87,7 +103,10 @@ class ModelConfig:
     @classmethod
     def get_pricing(cls, provider: LLMProviderType, model: str) -> Dict[str, float]:
         """获取模型定价"""
-        if provider == LLMProviderType.OPENAI:
+        # DeepSeek使用OpenAI provider，但定价不同
+        if "deepseek" in model.lower():
+            return cls.DEEPSEEK_PRICING.get(model, {"input": 0, "output": 0})
+        elif provider == LLMProviderType.OPENAI:
             return cls.OPENAI_PRICING.get(model, {"input": 0, "output": 0})
         elif provider == LLMProviderType.ANTHROPIC:
             return cls.ANTHROPIC_PRICING.get(model, {"input": 0, "output": 0})
