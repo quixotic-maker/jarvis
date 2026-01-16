@@ -6,6 +6,7 @@ import { Button, Input, Loading, Badge, Card } from '../components/ui'
 import MessageBubble from '../components/MessageBubble'
 import VoiceInput from '../components/VoiceInput'
 import AgentCard from '../components/AgentCard'
+import StreamingMarkdown from '../components/chat/StreamingMarkdown'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import {
@@ -21,9 +22,6 @@ import {
   FileText,
   Newspaper,
 } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
 import 'highlight.js/styles/github-dark.css'
 
 // 流式消息类型
@@ -478,18 +476,16 @@ export default function ChatV3() {
                   <MessageBubble
                     key={msg.id}
                     role={msg.role}
-                    content={
+                    content={(
                       msg.role === 'assistant' ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeHighlight]}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
+                        <StreamingMarkdown
+                          content={msg.content}
+                          isStreaming={msg.isStreaming}
+                        />
                       ) : (
                         msg.content
                       )
-                    }
+                    )}
                     name={msg.role === 'user' ? '我' : 'Jarvis'}
                     timestamp={formatDistanceToNow(new Date(msg.created_at), {
                       addSuffix: true,
