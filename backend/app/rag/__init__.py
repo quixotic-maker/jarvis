@@ -47,7 +47,11 @@ __all__ = [
     # Document Processor
     "DocumentProcessor",
     "get_document_processor",
-    # Services (to be implemented)
+    # Retrieval Service
     "RetrievalService",
+    "get_retrieval_service",
+    "RetrievalMode",
+    "RetrievalResult",
+    # Knowledge Base (to be implemented)
     "KnowledgeBaseService",
 ]
