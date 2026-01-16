@@ -2,6 +2,8 @@
 from typing import Dict, Any
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
+from app.core.cot_prompts import CoTPattern
 
 
 class CodeAgent(BaseAgent):
@@ -29,21 +31,31 @@ class CodeAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _generate_code(self, user_input: str, parameters: Dict) -> Dict[str, Any]:
-        """生成代码"""
+        """生成代码（集成Prompt系统）"""
         language = parameters.get("language", "Python")
         
-        system_prompt = f"""你是一个专业的{language}程序员。根据用户需求生成高质量的代码。
-
-要求：
-- 代码要简洁、高效、可读
-- 添加必要的注释
-- 遵循最佳实践
-- 处理边界情况"""
-
-        prompt = f"用户需求：{user_input}\n\n请生成{language}代码。"
+        # 使用Prompt系统，带Few-shot和CoT（代码生成需要逐步思考）
+        messages = prompt_service.build_messages(
+            agent_name="code_agent",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=1,
+            use_cot=True,
+            cot_pattern=CoTPattern.PROBLEM_SOLVING,  # 使用问题解决模式
+            constraints=[
+                "代码要简洁、高效、可读",
+                "添加必要的注释",
+                "遵循最佳实践",
+                "处理边界情况"
+            ],
+            output_format=f"```{language.lower()}\\n[代码]\\n```\\n\\n解释：[说明]"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             return {
                 "success": True,

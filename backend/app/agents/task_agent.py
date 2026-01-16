@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import TodoItem
+from app.core.prompt_service import prompt_service
 
 
 class TaskAgent(BaseAgent):
@@ -30,22 +31,23 @@ class TaskAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _create_task(self, user_input: str, db) -> Dict[str, Any]:
-        """创建待办任务"""
-        system_prompt = """你是一个任务管理助手。根据用户输入创建待办事项。
-
-返回格式：
-{
-    "title": "任务标题",
-    "description": "详细描述",
-    "priority": "high/medium/low",
-    "due_date": "YYYY-MM-DD HH:MM:SS",
-    "tags": ["标签1", "标签2"]
-}"""
-
-        prompt = f"用户输入：{user_input}\n\n请创建待办任务（JSON格式）。"
+        """创建待办任务（集成Prompt系统）"""
+        
+        # 使用Prompt系统生成消息，带Few-shot示例
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        messages = prompt_service.build_messages(
+            agent_name="task_agent",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=2,
+            context=f"当前日期：{current_date}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import Schedule
+from app.core.prompt_service import prompt_service
 
 
 class ScheduleAgent(BaseAgent):
@@ -39,24 +40,25 @@ class ScheduleAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _create_schedule(self, user_input: str, db) -> Dict[str, Any]:
-        """从自然语言创建日程"""
-        system_prompt = """你是一个日程管理助手。根据用户的自然语言输入，提取日程信息并返回结构化的JSON数据。
-
-返回格式：
-{
-    "title": "日程标题",
-    "description": "详细描述",
-    "start_time": "YYYY-MM-DD HH:MM:SS",
-    "end_time": "YYYY-MM-DD HH:MM:SS",
-    "location": "地点（如果有）"
-}
-
-如果没有明确指定时间，使用合理的默认值。"""
-
-        prompt = f"用户输入：{user_input}\n\n请提取日程信息并返回JSON格式。"
+        """从自然语言创建日程（集成Prompt系统）"""
+        
+        # 使用新的Prompt系统，带Few-shot示例和CoT推理
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        messages = prompt_service.build_messages(
+            agent_name="schedule_agent",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=2,
+            use_cot=False,  # 日程提取不需要复杂推理
+            context=f"当前日期：{current_date}"
+        )
+        
+        # 提取system和user消息
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             # 清理并解析JSON
             response = response.strip()

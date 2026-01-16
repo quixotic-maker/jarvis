@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
 
@@ -155,59 +156,15 @@ class CoordinatorAgent(BaseAgent):
         context: Dict,
         user_profile: Dict
     ) -> Dict[str, Any]:
-        """使用LLM进行深度意图分析"""
+        """使用LLM进行深度意图分析（集成Prompt系统）"""
         
-        system_prompt = """你是Jarvis系统的智能意图分析器。分析用户输入，判断：
-1. 用户真正想要什么
-2. 应该交给哪个Agent处理
-3. 提取关键参数
-
-可用的任务类型：
-- chat: 闲聊、问候、情感交流
-- schedule: 日程管理（创建、查询、修改日程）
-- task: 待办事项（创建、查询、完成任务）
-- reminder: 提醒设置
-- email: 邮件撰写
-- weather: 天气查询
-- news: 新闻获取
-- translation: 翻译
-- calculation: 计算
-- code: 代码生成/解释
-- note: 笔记管理
-- meeting: 会议管理
-- travel: 旅行规划
-- health: 健康建议
-- recommendation: 推荐（电影/书籍/音乐等）
-- info_retrieval: 信息查询/知识问答
-- data_analysis: 数据分析
-- contact: 联系人管理
-- file: 文件管理
-- summary: 文本总结
-- learning: 学习相关
-
-返回JSON格式：
-{
-    "task_type": "任务类型",
-    "intent": {
-        "type": "具体意图",
-        "action": "动作（create/query/update/delete）",
-        "description": "意图描述"
-    },
-    "parameters": {
-        "提取的参数"
-    },
-    "confidence": 0.85,
-    "needs_clarification": false,
-    "clarification_question": "需要追问的问题（如果信息不足）",
-    "implicit_needs": ["可能的隐含需求"]
-}
-
-注意：
-1. 只返回JSON
-2. 理解用户的真实意图，不只是字面意思
-3. 如果用户说"明天"，理解为相对于当前时间
-4. 提取时间、地点、人物等实体"""
-
+        # 使用新的Prompt系统生成system_prompt
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        system_prompt = prompt_service.get_agent_system_prompt(
+            "coordinator",
+            current_date=current_date
+        )
+        
         context_info = ""
         if context:
             context_info = f"\n对话上下文：{json.dumps(context, ensure_ascii=False)}"
@@ -215,15 +172,21 @@ class CoordinatorAgent(BaseAgent):
         if user_profile:
             context_info += f"\n用户信息：{json.dumps(user_profile, ensure_ascii=False)}"
         
-        prompt = f"""当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}
-{context_info}
-
-用户输入：{user_input}
-
-请分析意图并返回JSON："""
+        # 使用Prompt服务构建完整的消息（带Few-shot示例）
+        messages = prompt_service.build_messages(
+            agent_name="coordinator",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=2,
+            context=f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}{context_info}"
+        )
+        
+        # 从messages提取system_prompt和user_prompt
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), system_prompt)
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             # 清理JSON
             response = response.strip()
