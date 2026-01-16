@@ -108,3 +108,5 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
     </div>
   )
 }
+
+export default Toast

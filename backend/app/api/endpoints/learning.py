@@ -14,7 +14,7 @@ from typing import Optional, List
 from datetime import datetime, date
 
 from app.db.database import get_db
-from app.api.schemas import BaseResponse, PaginatedResponse
+from app.api.schemas import BaseResponse, PaginatedResponse, ResponseStatus, PaginationMeta
 
 router = APIRouter()
 
@@ -150,13 +150,18 @@ async def get_learning_plans(
     
     total = len(demo_plans)
     items = demo_plans[skip:skip + limit]
+    total_pages = (total + limit - 1) // limit if limit > 0 else 0
     
     return PaginatedResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
+        message="获取学习计划列表成功",
         data=items,
-        total=total,
-        page=skip // limit + 1,
-        page_size=limit
+        meta=PaginationMeta(
+            page=skip // limit + 1,
+            page_size=limit,
+            total=total,
+            total_pages=total_pages
+        )
     )
 
 
@@ -185,7 +190,7 @@ async def create_learning_plan(
     }
     
     return BaseResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
         message="学习计划创建成功",
         data=new_plan
     )
@@ -214,7 +219,11 @@ async def get_learning_plan(
             "tags": ["React", "前端", "进阶"],
             "created_at": datetime(2026, 1, 1, 10, 0, 0),
         }
-        return BaseResponse(success=True, data=plan)
+        return BaseResponse(
+            status=ResponseStatus.SUCCESS,
+            message="获取学习计划成功",
+            data=plan
+        )
     
     raise HTTPException(status_code=404, detail="学习计划不存在")
 
@@ -244,7 +253,7 @@ async def update_learning_plan(
     }
     
     return BaseResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
         message="学习计划更新成功",
         data=updated_plan
     )
@@ -258,8 +267,9 @@ async def delete_learning_plan(
     """删除学习计划"""
     # TODO: 实现真实的数据库删除
     return BaseResponse(
-        success=True,
-        message="学习计划删除成功"
+        status=ResponseStatus.SUCCESS,
+        message="学习计划删除成功",
+        data=None
     )
 
 
@@ -304,7 +314,8 @@ async def get_today_tasks(
     ]
     
     return BaseResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
+        message="获取今日任务成功",
         data=demo_tasks
     )
 
@@ -335,12 +346,19 @@ async def get_plan_tasks(
         },
     ]
     
+    total = len(demo_tasks)
+    total_pages = (total + limit - 1) // limit if limit > 0 else 0
+    
     return PaginatedResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
+        message="获取任务列表成功",
         data=demo_tasks,
-        total=len(demo_tasks),
-        page=skip // limit + 1,
-        page_size=limit
+        meta=PaginationMeta(
+            page=skip // limit + 1,
+            page_size=limit,
+            total=total,
+            total_pages=total_pages
+        )
     )
 
 
@@ -367,7 +385,7 @@ async def create_task(
     }
     
     return BaseResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
         message="学习任务创建成功",
         data=new_task
     )
@@ -397,7 +415,7 @@ async def update_task(
     }
     
     return BaseResponse(
-        success=True,
+        status=ResponseStatus.SUCCESS,
         message="学习任务更新成功",
         data=updated_task
     )
@@ -411,6 +429,7 @@ async def delete_task(
     """删除学习任务"""
     # TODO: 实现真实的数据库删除
     return BaseResponse(
-        success=True,
-        message="学习任务删除成功"
+        status=ResponseStatus.SUCCESS,
+        message="学习任务删除成功",
+        data=None
     )
