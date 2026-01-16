@@ -305,11 +305,15 @@ class ChatService:
             action_result = None
             agent_used = None
         else:
-            # 执行任务 - 非流式
+            # 执行任务 - 也做流式输出
             response_content, action_result, agent_used = await self._process_by_intent(
                 message, intent_result, user_context, conversation_history
             )
-            yield {"type": "content", "content": response_content}
+            # 模拟流式输出
+            import asyncio
+            for char in response_content:
+                yield {"type": "content", "content": char}
+                await asyncio.sleep(0.01)  # 每个字符延迟10ms
         
         # 8. 生成建议
         suggestions = await self._generate_suggestions(intent_result, action_result)
@@ -357,7 +361,13 @@ class ChatService:
     ):
         """流式生成聊天响应"""
         if not self.llm_enabled:
-            yield "你好！有什么我可以帮你的吗？"
+            # 模拟流式输出
+            demo_response = "你好！我是Jarvis，你的智能助手。\n\n我可以帮你：\n- 📅 管理日程和任务\n- 📧 处理邮件\n- 🌤️ 查询天气\n- 💡 回答问题\n\n有什么我可以帮你的吗？"
+            import asyncio
+            # 模拟逐字输出
+            for char in demo_response:
+                yield char
+                await asyncio.sleep(0.02)  # 每个字符延迟20ms
             return
         
         try:
