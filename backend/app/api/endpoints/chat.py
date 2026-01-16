@@ -26,11 +26,15 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     """对话请求"""
-    message: str = Field(..., min_length=1, description="用户消息")
+    message: Optional[str] = Field(None, description="用户消息")
     content: Optional[str] = Field(None, description="消息内容（兼容字段）")
     session_id: Optional[str] = Field(None, description="会话ID，不传则创建新会话")
     user_id: str = Field(default="default_user", description="用户ID")
     selected_agents: Optional[List[str]] = Field(None, description="用户选择的Agent列表")
+    
+    def get_message_content(self) -> str:
+        """获取消息内容（兼容message和content字段）"""
+        return self.message or self.content or ""
 
 
 class ChatResponseModel(BaseModel):
@@ -116,10 +120,14 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     """
     chat_service = ChatService(db)
     
+    message_content = request.get_message_content()
+    if not message_content:
+        raise HTTPException(status_code=400, detail="Message content is required")
+    
     try:
         response = await chat_service.chat(
             user_id=request.user_id,
-            message=request.message,
+            message=message_content,
             session_id=request.session_id
         )
         
@@ -149,6 +157,10 @@ async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
     """
     chat_service = ChatService(db)
     
+    message_content = request.get_message_content()
+    if not message_content:
+        raise HTTPException(status_code=400, detail="Message content is required")
+    
     async def generate() -> AsyncGenerator[str, None]:
         try:
             # 发送开始事件
@@ -157,7 +169,7 @@ async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
             # 获取流式响应
             async for chunk in chat_service.chat_stream(
                 user_id=request.user_id,
-                message=request.message,
+                message=message_content,
                 session_id=request.session_id
             ):
                 yield f"data: {json.dumps(chunk)}\n\n"
@@ -372,7 +384,7 @@ async def send_message_to_session(session_id: str, request: ChatRequest, db: Ses
     chat_service = ChatService(db)
     
     # 兼容处理：message 或 content
-    message_content = request.message or request.content
+    message_content = request.get_message_content()
     if not message_content:
         raise HTTPException(status_code=400, detail="Message content is required")
     
