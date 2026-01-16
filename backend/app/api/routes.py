@@ -15,6 +15,7 @@ from app.api.endpoints import (
     llm
 )
 from app.api.endpoints import tasks_v2, agents_management  # 新版API
+from app.api import knowledge_base  # RAG知识库API
 
 api_router = APIRouter()
 
@@ -23,6 +24,9 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 
 # LLM API（新增）
 api_router.include_router(llm.router, prefix="/v2/llm", tags=["llm-v2"])
+
+# RAG知识库API（Phase 4.3）
+api_router.include_router(knowledge_base.router, tags=["knowledge-base"])
 
 # V2版本API（使用统一响应格式）
 api_router.include_router(tasks_v2.router, prefix="/v2/tasks", tags=["tasks-v2"])
