@@ -11,7 +11,8 @@ from app.api.endpoints import (
     settings,
     learning,
     knowledge,
-    growth
+    growth,
+    llm
 )
 from app.api.endpoints import tasks_v2, agents_management  # 新版API
 
@@ -19,6 +20,9 @@ api_router = APIRouter()
 
 # 核心对话API（最重要）
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
+
+# LLM API（新增）
+api_router.include_router(llm.router, prefix="/v2/llm", tags=["llm-v2"])
 
 # V2版本API（使用统一响应格式）
 api_router.include_router(tasks_v2.router, prefix="/v2/tasks", tags=["tasks-v2"])
