@@ -313,3 +313,105 @@ export const learningAPI = {
       api.delete<BaseResponse<null>>(`/v2/learning/tasks/${taskId}`),
   },
 }
+// ==================== 知识大脑 API ====================
+
+export interface KnowledgeNode {
+  id: number
+  user_id: string
+  label: string
+  node_type: 'concept' | 'skill' | 'project' | 'resource' | 'person'
+  description: string | null
+  tags: string[]
+  metadata: Record<string, any> | null
+  connections_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Connection {
+  id: number
+  from_node_id: number
+  to_node_id: number
+  relation_type: string
+  weight: number
+  description: string | null
+  created_at: string
+}
+
+export interface KnowledgeGraph {
+  nodes: KnowledgeNode[]
+  edges: Connection[]
+  stats: {
+    total_nodes: number
+    total_connections: number
+    node_types: Record<string, number>
+    avg_connections: number
+  }
+}
+
+export const knowledgeAPI = {
+  // 知识节点
+  nodes: {
+    list: (userId: string = 'default_user', nodeType?: string, search?: string, skip: number = 0, limit: number = 50) =>
+      api.get<PaginatedResponse<KnowledgeNode>>('/v2/knowledge/nodes', {
+        params: { user_id: userId, node_type: nodeType, search, skip, limit }
+      }),
+    
+    get: (nodeId: number) =>
+      api.get<BaseResponse<KnowledgeNode>>(\`/v2/knowledge/nodes/\${nodeId}\`),
+    
+    create: (data: {
+      label: string
+      node_type: string
+      description?: string
+      tags?: string[]
+      metadata?: Record<string, any>
+    }, userId: string = 'default_user') =>
+      api.post<BaseResponse<KnowledgeNode>>('/v2/knowledge/nodes', data, {
+        params: { user_id: userId }
+      }),
+    
+    update: (nodeId: number, data: {
+      label?: string
+      description?: string
+      tags?: string[]
+      metadata?: Record<string, any>
+    }) =>
+      api.put<BaseResponse<KnowledgeNode>>(\`/v2/knowledge/nodes/\${nodeId}\`, data),
+    
+    delete: (nodeId: number) =>
+      api.delete<BaseResponse<null>>(\`/v2/knowledge/nodes/\${nodeId}\`),
+  },
+
+  // 知识连接
+  connections: {
+    list: (nodeId?: number, skip: number = 0, limit: number = 100) =>
+      api.get<PaginatedResponse<Connection>>('/v2/knowledge/connections', {
+        params: { node_id: nodeId, skip, limit }
+      }),
+    
+    create: (data: {
+      from_node_id: number
+      to_node_id: number
+      relation_type: string
+      weight?: number
+      description?: string
+    }) =>
+      api.post<BaseResponse<Connection>>('/v2/knowledge/connections', data),
+    
+    delete: (connectionId: number) =>
+      api.delete<BaseResponse<null>>(\`/v2/knowledge/connections/\${connectionId}\`),
+  },
+
+  // 知识图谱
+  graph: (userId: string = 'default_user', centerNodeId?: number, depth: number = 2) =>
+    api.get<BaseResponse<KnowledgeGraph>>('/v2/knowledge/graph', {
+      params: { user_id: userId, center_node_id: centerNodeId, depth }
+    }),
+
+  // 搜索
+  search: (query: string, userId: string = 'default_user') =>
+    api.get<BaseResponse<KnowledgeNode[]>>('/v2/knowledge/search', {
+      params: { query, user_id: userId }
+    }),
+}
