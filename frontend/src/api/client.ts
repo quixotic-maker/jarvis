@@ -118,6 +118,10 @@ export const chatAPI = {
   getSessions: (userId: string = 'default_user', limit: number = 20) =>
     api.get<ChatSession[]>('/chat/sessions', { params: { user_id: userId, limit } }),
 
+  // 创建新会话
+  createSession: (userId: string = 'default_user') =>
+    api.post<ChatSession>('/chat/sessions', null, { params: { user_id: userId } }),
+
   // 获取会话消息
   getMessages: (sessionId: string, limit: number = 50) =>
     api.get<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`, { params: { limit } }),

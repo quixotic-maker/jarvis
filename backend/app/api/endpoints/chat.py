@@ -298,6 +298,28 @@ async def get_sessions(
     ]
 
 
+@router.post("/sessions", response_model=SessionModel, summary="创建新会话")
+async def create_session(
+    user_id: str = Query(default="default_user"),
+    db: Session = Depends(get_db)
+):
+    """创建新的对话会话"""
+    chat_service = ChatService(db)
+    
+    session = await chat_service.get_or_create_session(None, user_id)
+    
+    return SessionModel(
+        id=session.id,
+        user_id=session.user_id,
+        title=session.title,
+        summary=session.summary,
+        is_active=session.is_active,
+        message_count=session.message_count,
+        last_activity=session.last_activity,
+        created_at=session.created_at
+    )
+
+
 @router.get("/sessions/{session_id}/messages", response_model=List[MessageModel], summary="获取会话消息")
 async def get_session_messages(
     session_id: str,

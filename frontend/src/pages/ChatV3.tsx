@@ -151,7 +151,7 @@ export default function ChatV3() {
     } else if (!currentSessionId && sessions.length === 0 && !createSessionMutation.isPending) {
       createSessionMutation.mutate()
     }
-  }, [sessions, currentSessionId])
+  }, [sessions, currentSessionId, createSessionMutation])
 
   // 发送消息
   const handleSend = async (message?: string) => {
@@ -264,10 +264,10 @@ export default function ChatV3() {
     }
   }
 
-  // 快捷操作
+  // 快捷操作 - 只填充输入框，不自动发送
   const handleQuickAction = (prompt: string) => {
     setInputValue(prompt)
-    handleSend(prompt)
+    // 不自动发送，由用户决定是否发送
   }
 
   // Agent选择/取消选择
