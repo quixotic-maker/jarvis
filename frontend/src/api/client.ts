@@ -199,3 +199,117 @@ export const agentAPI = {
   process: (agentName: string, input: string) =>
     api.post(`/agents/${agentName}/process`, { input }),
 }
+// ==================== 学习工作台 API ====================
+
+export interface LearningPlan {
+  id: number
+  user_id: string
+  title: string
+  goal: string
+  duration_days: number
+  progress: number
+  status: 'active' | 'paused' | 'completed'
+  tasks_count: number
+  completed_tasks_count: number
+  start_date: string
+  end_date: string | null
+  tags: string[]
+  created_at: string
+}
+
+export interface DailyTask {
+  id: number
+  plan_id: number
+  task_date: string
+  title: string
+  description: string | null
+  task_type: 'reading' | 'practice' | 'review' | 'project'
+  estimated_duration: number | null
+  actual_duration: number | null
+  completed: boolean
+  feedback: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+export interface BaseResponse<T> {
+  success: boolean
+  data?: T
+  message?: string
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean
+  data: T[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export const learningAPI = {
+  // 学习计划
+  plans: {
+    list: (userId: string = 'default_user', status?: string, skip: number = 0, limit: number = 20) =>
+      api.get<PaginatedResponse<LearningPlan>>('/v2/learning/plans', {
+        params: { user_id: userId, status, skip, limit }
+      }),
+    
+    get: (planId: number) =>
+      api.get<BaseResponse<LearningPlan>>(`/v2/learning/plans/${planId}`),
+    
+    create: (data: {
+      title: string
+      goal: string
+      duration_days?: number
+      tags?: string[]
+    }, userId: string = 'default_user') =>
+      api.post<BaseResponse<LearningPlan>>('/v2/learning/plans', data, {
+        params: { user_id: userId }
+      }),
+    
+    update: (planId: number, data: {
+      title?: string
+      goal?: string
+      status?: string
+    }) =>
+      api.put<BaseResponse<LearningPlan>>(`/v2/learning/plans/${planId}`, data),
+    
+    delete: (planId: number) =>
+      api.delete<BaseResponse<null>>(`/v2/learning/plans/${planId}`),
+  },
+
+  // 每日任务
+  tasks: {
+    today: (userId: string = 'default_user') =>
+      api.get<BaseResponse<DailyTask[]>>('/v2/learning/tasks/today', {
+        params: { user_id: userId }
+      }),
+    
+    byPlan: (planId: number, skip: number = 0, limit: number = 50) =>
+      api.get<PaginatedResponse<DailyTask>>(`/v2/learning/plans/${planId}/tasks`, {
+        params: { skip, limit }
+      }),
+    
+    create: (data: {
+      plan_id: number
+      task_date: string
+      title: string
+      description?: string
+      task_type?: string
+      estimated_duration?: number
+    }) =>
+      api.post<BaseResponse<DailyTask>>('/v2/learning/tasks', data),
+    
+    update: (taskId: number, data: {
+      title?: string
+      description?: string
+      completed?: boolean
+      actual_duration?: number
+      feedback?: string
+    }) =>
+      api.put<BaseResponse<DailyTask>>(`/v2/learning/tasks/${taskId}`, data),
+    
+    delete: (taskId: number) =>
+      api.delete<BaseResponse<null>>(`/v2/learning/tasks/${taskId}`),
+  },
+}

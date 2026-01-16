@@ -8,7 +8,8 @@ from app.api.endpoints import (
     reminders, 
     advanced_agents, 
     chat,
-    settings
+    settings,
+    learning
 )
 from app.api.endpoints import tasks_v2  # 新版tasks API
 
@@ -21,6 +22,7 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(tasks_v2.router, prefix="/v2/tasks", tags=["tasks-v2"])
 api_router.include_router(schedules.router, prefix="/v2/schedules", tags=["schedules-v2"])
 api_router.include_router(settings.router, prefix="/v2/settings", tags=["settings-v2"])
+api_router.include_router(learning.router, prefix="/v2/learning", tags=["learning-v2"])
 
 # 其他端点路由（保留旧版兼容）
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
