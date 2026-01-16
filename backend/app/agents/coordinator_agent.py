@@ -188,16 +188,28 @@ class CoordinatorAgent(BaseAgent):
         try:
             response = await self.process_with_llm(user_msg, system_msg)
             
-            # 清理JSON
-            response = response.strip()
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            if response.endswith("```"):
-                response = response[:-3]
+            # 增强的JSON清理逻辑
             response = response.strip()
             
+            # 1. 移除Markdown代码块
+            if "```json" in response:
+                response = response.split("```json")[1].split("```")[0]
+            elif "```" in response:
+                parts = response.split("```")
+                if len(parts) >= 3:
+                    response = parts[1]
+                    if response.startswith("json"):
+                        response = response[4:]
+            
+            # 2. 使用正则提取JSON对象（处理前置解释文本）
+            import re
+            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response, re.DOTALL)
+            if json_match:
+                response = json_match.group()
+            
+            response = response.strip()
+            
+            # 3. 解析JSON
             result = json.loads(response)
             
             task_type = result.get("task_type", "chat")
@@ -214,29 +226,54 @@ class CoordinatorAgent(BaseAgent):
                 "implicit_needs": result.get("implicit_needs", [])
             }
             
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析失败: {e}\n响应内容: {response[:200] if 'response' in locals() else 'N/A'}")
+            # 降级到规则匹配
+            return self._fallback_intent(user_input)
         except Exception as e:
             logger.error(f"Intent analysis error: {e}")
             # 降级到规则匹配
             return self._fallback_intent(user_input)
     
     def _fallback_intent(self, user_input: str) -> Dict[str, Any]:
-        """降级的意图匹配"""
-        # 任务关键词映射
+        """降级的意图匹配（增强版）"""
+        # 任务关键词映射（大幅扩展）
         keyword_map = {
-            "schedule": ["日程", "安排", "约", "预约", "会议时间"],
-            "task": ["待办", "任务", "todo", "要做", "完成"],
+            "code": [
+                "代码", "编程", "python", "javascript", "java", "函数", "算法",
+                "写一个", "实现", "开发", "脚本", "程序", "帮我写",
+                "快速排序", "二分查找", "递归", "循环", "排序", "查找"
+            ],
+            "task": [
+                "待办", "任务", "todo", "要做", "完成",
+                "本周", "下周", "截止", "前完成", "报告", "deadline"
+            ],
+            "schedule": [
+                "日程", "安排", "约", "预约", "会议时间",
+                "早上", "下午", "晚上", "点", "和", "讨论", "开会", "周一", "周二"
+            ],
+            "summary": [
+                "总结", "摘要", "概括", "归纳", "要点",
+                "提炼", "精简", "condensate", "总结一下"
+            ],
+            "recommendation": [
+                "推荐", "建议", "有什么好的",
+                "几部", "哪些", "什么好看", "什么好玩", "推荐一些"
+            ],
+            "data_analysis": [
+                "分析", "数据", "趋势", "统计", "图表",
+                "销售", "业绩", "指标", "分析一下"
+            ],
             "reminder": ["提醒", "别忘了", "记得"],
             "email": ["邮件", "email", "发送给"],
             "weather": ["天气", "下雨", "温度", "气温"],
             "news": ["新闻", "资讯", "最新消息"],
             "translation": ["翻译", "translate", "用英语", "用中文"],
             "calculation": ["计算", "等于", "加", "减", "乘", "除", "求"],
-            "code": ["代码", "编程", "python", "javascript", "函数", "算法"],
             "note": ["笔记", "记录", "note", "记下"],
             "meeting": ["会议", "开会", "会议纪要"],
             "travel": ["旅行", "旅游", "出行", "出差", "攻略"],
             "health": ["健康", "运动", "锻炼", "睡眠", "饮食"],
-            "recommendation": ["推荐", "建议", "有什么好的"],
             "info_retrieval": ["什么是", "是什么", "怎么", "如何", "为什么"],
             "contact": ["联系人", "电话", "联系方式"]
         }

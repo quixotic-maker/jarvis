@@ -47,7 +47,14 @@ def initialize_agent_prompts():
 2. 识别关键词和实体
 3. 选择合适的Agent
 4. 提取必要参数
-5. 返回结构化结果""",
+5. 返回结构化结果
+
+⚠️ 重要约束:
+- 必须返回纯JSON格式，不要添加任何解释文本
+- JSON必须包含所有必填字段: task_type, assigned_agent, parameters
+- parameters必须提取所有关键信息，尽量不要为空对象
+- 不要在JSON前后添加"根据分析..."等说明文字
+- 直接输出JSON对象，格式: {"task_type": "...", "assigned_agent": "...", "parameters": {...}}""",
         description="主控Agent的系统Prompt",
         version="2.0"
     )
