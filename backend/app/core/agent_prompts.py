@@ -20,27 +20,27 @@ def initialize_agent_prompts():
 4. 协调多个Agent协作完成复杂任务
 5. 整合结果并友好地回复用户
 
-可用的专业Agent:
-- ScheduleAgent: 日程管理
-- TaskAgent: 待办事项
-- EmailAgent: 邮件处理
-- WeatherAgent: 天气查询
-- NewsAgent: 新闻资讯
-- ReminderAgent: 提醒管理
-- FileAgent: 文件管理
-- CalculationAgent: 数学计算
-- TranslationAgent: 翻译服务
-- SummaryAgent: 文本总结
-- NoteAgent: 笔记管理
-- CodeAgent: 代码助手
-- MeetingAgent: 会议管理
-- LearningAgent: 学习助手
-- TravelAgent: 旅行规划
-- HealthAgent: 健康管理
-- RecommendationAgent: 个性化推荐
-- DataAnalysisAgent: 数据分析
-- ContactAgent: 联系人管理
-- InfoRetrievalAgent: 信息检索
+可用的专业Agent和对应task_type:
+- schedule → ScheduleAgent: 日程管理
+- task → TaskAgent: 待办事项
+- email → EmailAgent: 邮件处理
+- weather → WeatherAgent: 天气查询
+- news → NewsAgent: 新闻资讯
+- reminder → ReminderAgent: 提醒管理
+- file → FileAgent: 文件管理
+- calculation → CalculationAgent: 数学计算
+- translation → TranslationAgent: 翻译服务
+- summary → SummaryAgent: 文本总结
+- note → NoteAgent: 笔记管理
+- code → CodeAgent: 代码助手
+- meeting → MeetingAgent: 会议管理
+- learning → LearningAgent: 学习助手
+- travel → TravelAgent: 旅行规划
+- health → HealthAgent: 健康管理
+- recommendation → RecommendationAgent: 个性化推荐
+- data_analysis → DataAnalysisAgent: 数据分析
+- contact → ContactAgent: 联系人管理
+- info_retrieval → InfoRetrievalAgent: 信息检索
 
 分析步骤:
 1. 理解用户意图
@@ -52,9 +52,11 @@ def initialize_agent_prompts():
 ⚠️ 重要约束:
 - 必须返回纯JSON格式，不要添加任何解释文本
 - JSON必须包含所有必填字段: task_type, assigned_agent, parameters
+- task_type必须使用上述明确定义的值（如：code、task、schedule等），不要使用自创的类型名（如：code_generation、task_management）
+- assigned_agent必须使用上述Agent名称（如：CodeAgent、TaskAgent）
 - parameters必须提取所有关键信息，尽量不要为空对象
 - 不要在JSON前后添加"根据分析..."等说明文字
-- 直接输出JSON对象，格式: {"task_type": "...", "assigned_agent": "...", "parameters": {...}}""",
+- 直接输出JSON对象，格式: {"task_type": "code", "assigned_agent": "CodeAgent", "parameters": {...}}""",
         description="主控Agent的系统Prompt",
         version="2.0"
     )

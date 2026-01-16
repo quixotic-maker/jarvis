@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 class CoordinatorAgent(BaseAgent):
     """主控Agent，负责理解用户意图并分配任务（增强版）"""
     
-    # Agent映射表
+    # Agent映射表（支持多种别名）
     AGENT_MAP = {
+        # 主要映射
         "schedule": "ScheduleAgent",
         "info_retrieval": "InfoRetrievalAgent",
         "email": "EmailAgent",
@@ -36,7 +37,22 @@ class CoordinatorAgent(BaseAgent):
         "data_analysis": "DataAnalysisAgent",
         "contact": "ContactAgent",
         "chat": "ChatAgent",
-        "general": "InfoRetrievalAgent"
+        "general": "InfoRetrievalAgent",
+        # 别名映射（LLM可能返回的变体）
+        "code_generation": "CodeAgent",
+        "programming": "CodeAgent",
+        "task_management": "TaskAgent",
+        "todo": "TaskAgent",
+        "schedule_management": "ScheduleAgent",
+        "calendar": "ScheduleAgent",
+        "summarize": "SummaryAgent",
+        "summarization": "SummaryAgent",
+        "recommend": "RecommendationAgent",
+        "analyze": "DataAnalysisAgent",
+        "analysis": "DataAnalysisAgent",
+        "translate": "TranslationAgent",
+        "compute": "CalculationAgent",
+        "math": "CalculationAgent"
     }
     
     def __init__(self, db=None):
@@ -177,7 +193,7 @@ class CoordinatorAgent(BaseAgent):
             agent_name="coordinator",
             user_input=user_input,
             use_few_shot=True,
-            num_examples=2,
+            num_examples=5,  # 使用5个示例，覆盖主要场景
             context=f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}{context_info}"
         )
         

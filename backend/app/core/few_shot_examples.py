@@ -12,39 +12,90 @@ class FewShotExamples:
     COORDINATOR_EXAMPLES = [
         {
             "input": "明天下午3点提醒我开会",
-            "analysis": "意图：创建提醒 | Agent: ReminderAgent | 参数: 时间=明天15:00, 内容=开会",
             "output": {
-                "agent": "ReminderAgent",
-                "action": "create_reminder",
-                "params": {
+                "task_type": "reminder",
+                "assigned_agent": "ReminderAgent",
+                "parameters": {
                     "content": "开会",
-                    "time": "tomorrow 15:00"
-                }
+                    "time": "明天下午3点"
+                },
+                "confidence": 0.95
             }
         },
         {
-            "input": "帮我写一份道歉邮件给客户",
-            "analysis": "意图：撰写邮件 | Agent: EmailAgent | 参数: 类型=道歉, 收件人=客户",
+            "input": "帮我写一个Python快速排序算法",
             "output": {
-                "agent": "EmailAgent",
-                "action": "compose_email",
-                "params": {
-                    "type": "apology",
-                    "recipient": "客户",
-                    "tone": "formal"
-                }
+                "task_type": "code",
+                "assigned_agent": "CodeAgent",
+                "parameters": {
+                    "language": "Python",
+                    "algorithm": "快速排序",
+                    "description": "实现快速排序算法"
+                },
+                "confidence": 0.92
+            }
+        },
+        {
+            "input": "本周五前完成项目报告",
+            "output": {
+                "task_type": "task",
+                "assigned_agent": "TaskAgent",
+                "parameters": {
+                    "title": "完成项目报告",
+                    "deadline": "本周五",
+                    "priority": "high"
+                },
+                "confidence": 0.90
+            }
+        },
+        {
+            "input": "下周一早上9点和张三讨论项目",
+            "output": {
+                "task_type": "schedule",
+                "assigned_agent": "ScheduleAgent",
+                "parameters": {
+                    "title": "与张三讨论项目",
+                    "time": "下周一早上9点",
+                    "participants": ["张三"]
+                },
+                "confidence": 0.92
+            }
+        },
+        {
+            "input": "总结一下这篇文章的要点",
+            "output": {
+                "task_type": "summary",
+                "assigned_agent": "SummaryAgent",
+                "parameters": {
+                    "content_type": "文章",
+                    "output_format": "要点"
+                },
+                "confidence": 0.88
+            }
+        },
+        {
+            "input": "推荐几部科幻电影",
+            "output": {
+                "task_type": "recommendation",
+                "assigned_agent": "RecommendationAgent",
+                "parameters": {
+                    "category": "电影",
+                    "genre": "科幻",
+                    "count": "几部"
+                },
+                "confidence": 0.90
             }
         },
         {
             "input": "北京明天天气怎么样？",
-            "analysis": "意图：查询天气 | Agent: WeatherAgent | 参数: 地点=北京, 时间=明天",
             "output": {
-                "agent": "WeatherAgent",
-                "action": "query_weather",
-                "params": {
-                    "location": "北京",
-                    "date": "tomorrow"
-                }
+                "task_type": "weather",
+                "assigned_agent": "WeatherAgent",
+                "parameters": {
+                    "city": "北京",
+                    "date": "明天"
+                },
+                "confidence": 0.95
             }
         }
     ]
