@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import Contact
+from app.core.prompt_service import prompt_service
 
 
 class ContactAgent(BaseAgent):
@@ -30,24 +31,21 @@ class ContactAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _add_contact(self, user_input: str, db) -> Dict[str, Any]:
-        """添加联系人"""
-        system_prompt = """你是一个联系人管理助手。从用户输入中提取联系人信息。
-
-返回格式：
-{
-    "name": "姓名",
-    "phone": "电话",
-    "email": "邮箱",
-    "company": "公司",
-    "position": "职位",
-    "tags": ["标签1", "标签2"],
-    "notes": "备注"
-}"""
-
-        prompt = f"用户输入：{user_input}\n\n请提取联系人信息（JSON格式）。"
+        """添加联系人（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="contact_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            output_format="{\"name\": \"...\", \"phone\": \"...\", \"email\": \"...\", \"company\": \"...\", \"position\": \"...\", \"tags\": [...], \"notes\": \"...\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

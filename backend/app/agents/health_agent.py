@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class HealthAgent(BaseAgent):
@@ -30,17 +31,21 @@ class HealthAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _health_advice(self, user_input: str) -> Dict[str, Any]:
-        """健康建议"""
-        system_prompt = """你是一个健康顾问。提供科学的健康建议。
-
-注意：
-- 这是一般性建议，不能替代专业医疗咨询
-- 如有严重健康问题，请就医"""
-
-        prompt = f"用户咨询：{user_input}\n\n请提供健康建议。"
+        """健康建议（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="health_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            constraints=["科学健康建议", "说明不能替代医疗", "严重问题建议就医"]
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             return {
                 "success": True,

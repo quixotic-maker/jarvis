@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import Note
+from app.core.prompt_service import prompt_service
 
 
 class NoteAgent(BaseAgent):
@@ -30,21 +31,21 @@ class NoteAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _create_note(self, user_input: str, db) -> Dict[str, Any]:
-        """创建笔记"""
-        system_prompt = """你是一个笔记助手。根据用户输入创建笔记。
-
-返回格式：
-{
-    "title": "笔记标题",
-    "content": "笔记内容",
-    "category": "分类",
-    "tags": ["标签1", "标签2"]
-}"""
-
-        prompt = f"用户输入：{user_input}\n\n请创建笔记（JSON格式）。"
+        """创建笔记（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="note_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            output_format="{\"title\": \"...\", \"content\": \"...\", \"category\": \"...\", \"tags\": [...]}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

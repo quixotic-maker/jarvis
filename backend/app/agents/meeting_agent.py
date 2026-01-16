@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import Meeting
+from app.core.prompt_service import prompt_service
 
 
 class MeetingAgent(BaseAgent):
@@ -30,23 +31,23 @@ class MeetingAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _schedule_meeting(self, user_input: str, db) -> Dict[str, Any]:
-        """安排会议"""
-        system_prompt = """你是一个会议助手。根据用户输入安排会议。
-
-返回格式：
-{
-    "title": "会议主题",
-    "start_time": "YYYY-MM-DD HH:MM:SS",
-    "duration": 60,
-    "attendees": ["参会人1", "参会人2"],
-    "location": "会议地点",
-    "agenda": "会议议程"
-}"""
-
-        prompt = f"用户输入：{user_input}\n\n请安排会议（JSON格式）。"
+        """安排会议（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        messages = prompt_service.build_messages(
+            agent_name="meeting_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            context=f"当前日期：{current_date}",
+            output_format="{\"title\": \"...\", \"start_time\": \"YYYY-MM-DD HH:MM:SS\", \"duration\": 60, \"attendees\": [...], \"location\": \"...\", \"agenda\": \"...\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

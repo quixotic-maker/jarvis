@@ -4,6 +4,8 @@ import json
 import re
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
+from app.core.cot_prompts import CoTPattern
 
 
 class CalculationAgent(BaseAgent):
@@ -30,23 +32,24 @@ class CalculationAgent(BaseAgent):
         return await self._calculate(user_input)
     
     async def _calculate(self, user_input: str) -> Dict[str, Any]:
-        """执行计算"""
-        system_prompt = """你是一个数学和计算助手。根据用户的问题进行计算并解释。
-
-返回格式：
-{
-    "expression": "计算表达式",
-    "result": 计算结果,
-    "steps": ["步骤1", "步骤2"],
-    "explanation": "结果解释"
-}
-
-支持：基本运算、代数、统计、百分比、单位转换等。"""
-
-        prompt = f"用户问题：{user_input}\n\n请进行计算并返回JSON格式结果。"
+        """执行计算（集成Prompt系统，使用CoT）"""
+        
+        # 使用Prompt系统，带CoT示例
+        messages = prompt_service.build_messages(
+            agent_name="calculation_agent",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=1,
+            use_cot=True,
+            cot_pattern=CoTPattern.STEP_BY_STEP,
+            output_format="{\"expression\": \"...\", \"result\": ..., \"steps\": [...], \"explanation\": \"...\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             # 清理JSON
             response = response.strip()

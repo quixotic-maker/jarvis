@@ -10,6 +10,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.core.config import settings
+from app.core.prompt_service import prompt_service
 
 
 class TranslationAgent(BaseAgent):

@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class EmailAgent(BaseAgent):
@@ -36,21 +37,21 @@ class EmailAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _compose_email(self, user_input: str) -> Dict[str, Any]:
-        """使用LLM撰写邮件"""
-        system_prompt = """你是一个专业的邮件撰写助手。根据用户的需求，生成合适的邮件内容。
-
-返回格式：
-{
-    "subject": "邮件主题",
-    "to": "收件人",
-    "body": "邮件正文",
-    "tone": "formal/casual"
-}"""
-
-        prompt = f"用户需求：{user_input}\n\n请生成邮件内容。"
+        """使用LLM撰写邮件（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="email_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            output_format="{\"subject\": \"...\", \"to\": \"...\", \"body\": \"...\", \"tone\": \"formal/casual\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             # 清理并解析JSON
             response = response.strip()

@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class LearningAgent(BaseAgent):
@@ -30,28 +31,21 @@ class LearningAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _create_learning_plan(self, topic: str) -> Dict[str, Any]:
-        """创建学习计划"""
-        system_prompt = """你是一个学习规划专家。为用户制定科学的学习计划。
-
-返回格式：
-{
-    "topic": "学习主题",
-    "duration": "建议学习时长",
-    "phases": [
-        {
-            "phase": "阶段名称",
-            "goals": ["目标1", "目标2"],
-            "resources": ["资源1", "资源2"],
-            "duration": "时长"
-        }
-    ],
-    "tips": ["学习建议1", "学习建议2"]
-}"""
-
-        prompt = f"学习主题：{topic}\n\n请制定学习计划（JSON格式）。"
+        """创建学习计划（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="learning_agent",
+            user_input=f"制定学习计划：{topic}",
+            use_few_shot=False,
+            output_format="{\"topic\": \"...\", \"duration\": \"...\", \"phases\": [...], \"tips\": [...]}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else topic
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

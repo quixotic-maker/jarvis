@@ -3,6 +3,8 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
+from app.core.cot_prompts import CoTPattern
 
 
 class DataAnalysisAgent(BaseAgent):
@@ -22,30 +24,24 @@ class DataAnalysisAgent(BaseAgent):
         return await self._analyze_data(user_input, parameters)
     
     async def _analyze_data(self, user_input: str, parameters: Dict) -> Dict[str, Any]:
-        """分析数据"""
-        system_prompt = """你是一个数据分析专家。根据用户提供的数据或需求进行分析。
-
-返回格式：
-{
-    "analysis_type": "分析类型",
-    "findings": [
-        {
-            "insight": "发现的洞察",
-            "importance": "high/medium/low",
-            "explanation": "详细解释"
-        }
-    ],
-    "statistics": {
-        "key_metrics": "关键指标"
-    },
-    "recommendations": ["建议1", "建议2"],
-    "visualization_suggestion": "可视化建议"
-}"""
-
-        prompt = f"数据/需求：{user_input}\n\n请进行数据分析（JSON格式）。"
+        """分析数据（集成Prompt系统，使用CoT）"""
+        
+        # 使用Prompt系统，带Few-shot和CoT
+        messages = prompt_service.build_messages(
+            agent_name="data_analysis",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=1,
+            use_cot=True,
+            cot_pattern=CoTPattern.ANALYSIS,  # 使用分析模式
+            output_format="{\"analysis_type\": \"...\", \"findings\": [...], \"statistics\": {...}, \"recommendations\": [...], \"visualization_suggestion\": \"...\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

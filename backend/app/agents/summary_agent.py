@@ -2,6 +2,7 @@
 from typing import Dict, Any
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class SummaryAgent(BaseAgent):
@@ -29,7 +30,7 @@ class SummaryAgent(BaseAgent):
         return await self._summarize(user_input, parameters)
     
     async def _summarize(self, user_input: str, parameters: Dict) -> Dict[str, Any]:
-        """生成摘要"""
+        """生成摘要（集成Prompt系统）"""
         length = parameters.get("length", "medium")
         length_guide = {
             "short": "1-2句话",
@@ -37,23 +38,21 @@ class SummaryAgent(BaseAgent):
             "long": "1段话"
         }
         
-        system_prompt = f"""你是一个专业的文本总结助手。请对用户提供的内容进行总结。
-
-要求：
-- 摘要长度：{length_guide.get(length, '适中')}
-- 保留关键信息和要点
-- 语言简洁清晰
-- 提取核心观点
-
-同时提供：
-1. 简短摘要
-2. 关键要点列表
-3. 主要结论"""
-
-        prompt = f"请总结以下内容：\n\n{user_input}"
+        # 使用Prompt系统，带Few-shot示例
+        messages = prompt_service.build_messages(
+            agent_name="summary_agent",
+            user_input=user_input,
+            use_few_shot=True,
+            num_examples=1,
+            context=f"摘要长度：{length_guide.get(length, '适中')}",
+            constraints=["保留关键信息", "语言简洁清晰", "提取核心观点"]
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             return {
                 "success": True,

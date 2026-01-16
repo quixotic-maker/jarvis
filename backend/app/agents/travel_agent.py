@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class TravelAgent(BaseAgent):
@@ -22,31 +23,21 @@ class TravelAgent(BaseAgent):
         return await self._plan_trip(user_input, parameters)
     
     async def _plan_trip(self, user_input: str, parameters: Dict) -> Dict[str, Any]:
-        """规划旅行"""
-        system_prompt = """你是一个专业的旅行规划师。根据用户需求制定详细的旅行计划。
-
-返回格式：
-{
-    "destination": "目的地",
-    "duration": "建议天数",
-    "itinerary": [
-        {
-            "day": 1,
-            "activities": ["活动1", "活动2"],
-            "attractions": ["景点1", "景点2"],
-            "meals": "餐饮建议",
-            "accommodation": "住宿建议"
-        }
-    ],
-    "budget": "预算建议",
-    "tips": ["旅行建议1", "旅行建议2"],
-    "packing_list": ["物品1", "物品2"]
-}"""
-
-        prompt = f"用户需求：{user_input}\n\n请制定旅行计划（JSON格式）。"
+        """规划旅行（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="travel_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            output_format="{\"destination\": \"...\", \"duration\": \"...\", \"itinerary\": [...], \"budget\": \"...\", \"tips\": [...], \"packing_list\": [...]}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

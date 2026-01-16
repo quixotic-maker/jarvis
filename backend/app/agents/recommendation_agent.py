@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 
 from app.agents.base_agent import BaseAgent
+from app.core.prompt_service import prompt_service
 
 
 class RecommendationAgent(BaseAgent):
@@ -22,30 +23,23 @@ class RecommendationAgent(BaseAgent):
         return await self._recommend(user_input, parameters)
     
     async def _recommend(self, user_input: str, parameters: Dict) -> Dict[str, Any]:
-        """生成推荐"""
+        """生成推荐（集成Prompt系统）"""
         category = parameters.get("category", "通用")
         
-        system_prompt = f"""你是一个{category}推荐专家。根据用户的喜好和需求提供个性化推荐。
-
-返回格式：
-{{
-    "category": "{category}",
-    "recommendations": [
-        {{
-            "title": "推荐项目名称",
-            "description": "简介",
-            "reason": "推荐理由",
-            "rating": 4.5,
-            "tags": ["标签1", "标签2"]
-        }}
-    ],
-    "total": 5
-}}"""
-
-        prompt = f"用户需求：{user_input}\n\n请提供推荐（JSON格式，至少5个）。"
+        # 使用Prompt系统
+        messages = prompt_service.build_messages(
+            agent_name="recommendation_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            context=f"推荐类别：{category}",
+            output_format="{\"category\": \"...\", \"recommendations\": [{\"title\": \"...\", \"description\": \"...\", \"reason\": \"...\", \"rating\": 4.5, \"tags\": [...]}], \"total\": 5}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             response = response.strip()
             if response.startswith("```json"):
                 response = response[7:]

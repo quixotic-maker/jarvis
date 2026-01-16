@@ -5,6 +5,7 @@ import json
 
 from app.agents.base_agent import BaseAgent
 from app.db.models import Reminder
+from app.core.prompt_service import prompt_service
 
 
 class ReminderAgent(BaseAgent):
@@ -39,22 +40,23 @@ class ReminderAgent(BaseAgent):
             return {"success": False, "error": "不支持的操作"}
     
     async def _create_reminder(self, user_input: str, db) -> Dict[str, Any]:
-        """创建提醒"""
-        system_prompt = """你是一个提醒助手。根据用户输入创建提醒。
-
-返回格式：
-{
-    "title": "提醒标题",
-    "message": "提醒内容",
-    "remind_at": "YYYY-MM-DD HH:MM:SS",
-    "repeat": "once/daily/weekly/monthly",
-    "priority": "low/medium/high"
-}"""
-
-        prompt = f"用户输入：{user_input}\n\n请创建提醒（JSON格式）。"
+        """创建提醒（集成Prompt系统）"""
+        
+        # 使用Prompt系统
+        current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+        messages = prompt_service.build_messages(
+            agent_name="reminder_agent",
+            user_input=user_input,
+            use_few_shot=False,
+            context=f"当前时间：{current_date}",
+            output_format="{\"title\": \"...\", \"message\": \"...\", \"remind_at\": \"YYYY-MM-DD HH:MM:SS\", \"repeat\": \"once/daily/weekly/monthly\", \"priority\": \"low/medium/high\"}"
+        )
+        
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msg = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else user_input
         
         try:
-            response = await self.process_with_llm(prompt, system_prompt)
+            response = await self.process_with_llm(user_msg, system_msg)
             
             # 清理JSON
             response = response.strip()
