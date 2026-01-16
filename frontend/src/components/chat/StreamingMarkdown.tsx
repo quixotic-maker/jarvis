@@ -20,25 +20,33 @@ interface StreamingMarkdownProps {
 const StreamingMarkdown = memo(({ content, isStreaming = false, className = '' }: StreamingMarkdownProps) => {
   const [renderedContent, setRenderedContent] = useState(content)
   const timeoutRef = useRef<NodeJS.Timeout>()
-  const lastContentRef = useRef(content)
+  const lastRenderTimeRef = useRef(0)
 
   useEffect(() => {
     if (isStreaming) {
-      // 流式输出中：使用防抖，每100ms更新一次渲染
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+      // 流式输出中：使用节流，确保至少每100ms更新一次
+      const now = Date.now()
+      const timeSinceLastRender = now - lastRenderTimeRef.current
 
-      timeoutRef.current = setTimeout(() => {
+      if (timeSinceLastRender >= 100) {
+        // 距离上次渲染超过100ms，立即更新
         setRenderedContent(content)
-        lastContentRef.current = content
-      }, 100)
+        lastRenderTimeRef.current = now
+      } else {
+        // 距离上次渲染不足100ms，设置定时器
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          setRenderedContent(content)
+          lastRenderTimeRef.current = Date.now()
+        }, 100 - timeSinceLastRender)
+      }
     } else {
       // 流式完成：立即渲染最终版本
-      if (lastContentRef.current !== content) {
-        setRenderedContent(content)
-        lastContentRef.current = content
-      }
+      setRenderedContent(content)
+      lastRenderTimeRef.current = Date.now()
     }
 
     return () => {
