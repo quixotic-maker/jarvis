@@ -151,25 +151,27 @@ class RetrievalService:
         search_results = await self.vector_store.search_with_embedding(
             embedding=query_embedding,
             k=k,
-            filter_metadata=filter_metadata,
-            score_threshold=score_threshold
+            filter_metadata=filter_metadata
         )
         
-        # 3. 转换为RetrievalResult
+        # 3. 转换为RetrievalResult并过滤分数
         results = []
         for i, result in enumerate(search_results):
-            retrieval_result = RetrievalResult(
-                document=result.document,
-                score=result.score,
-                rank=i + 1,
-                retrieval_mode=RetrievalMode.SEMANTIC,
-                metadata={
-                    "search_type": "vector",
-                    "original_rank": result.rank
-                }
-            )
-            results.append(retrieval_result)
+            # 只保留分数高于阈值的结果
+            if result.score >= score_threshold:
+                retrieval_result = RetrievalResult(
+                    document=result.document,
+                    score=result.score,
+                    rank=i + 1,
+                    retrieval_mode=RetrievalMode.SEMANTIC,
+                    metadata={
+                        "search_type": "vector",
+                        "original_rank": result.rank
+                    }
+                )
+                results.append(retrieval_result)
         
+        logger.info(f"语义搜索完成: 返回 {len(results)} 个结果 (阈值={score_threshold})")
         return results
     
     async def _keyword_search(

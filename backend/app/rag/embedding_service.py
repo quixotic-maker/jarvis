@@ -172,9 +172,11 @@ class EmbeddingService:
                 loop = asyncio.get_event_loop()
                 embeddings = await loop.run_in_executor(
                     None,
-                    self.client.encode,
-                    valid_texts,
-                    batch_size
+                    lambda: self.client.encode(
+                        valid_texts,
+                        batch_size=batch_size,
+                        show_progress_bar=False
+                    )
                 )
                 embeddings_list = [emb.tolist() for emb in embeddings]
                 logger.info(f"Generated {len(embeddings_list)} local embeddings")

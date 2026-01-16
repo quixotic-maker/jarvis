@@ -221,10 +221,12 @@ class DocumentProcessor:
         chunks = self.chunking_service.chunk_text(text, base_metadata)
         
         # 转换为Document
+        import time
+        timestamp = int(time.time() * 1000000)  # 微秒级时间戳
         documents = []
         for chunk in chunks:
             chunk_index = chunk.metadata.get("chunk_index", 0)
-            doc_id = f"text_{chunk_index}"
+            doc_id = f"text_{timestamp}_{chunk_index}"
             
             doc = Document(
                 content=chunk.text,

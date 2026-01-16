@@ -18,8 +18,14 @@ from app.rag.loaders import (
     LoaderFactory, get_loader_factory
 )
 from app.rag.document_processor import DocumentProcessor, get_document_processor
-from app.rag.retrieval_service import RetrievalService
-from app.rag.knowledge_base_service import KnowledgeBaseService
+from app.rag.retrieval_service import (
+    RetrievalService, get_retrieval_service, 
+    RetrievalMode, RetrievalResult
+)
+from app.rag.knowledge_base_service import (
+    KnowledgeBaseService, get_knowledge_base, 
+    list_knowledge_bases, KnowledgeBase
+)
 
 __all__ = [
     # Embedding
@@ -52,6 +58,9 @@ __all__ = [
     "get_retrieval_service",
     "RetrievalMode",
     "RetrievalResult",
-    # Knowledge Base (to be implemented)
+    # Knowledge Base Service
     "KnowledgeBaseService",
+    "get_knowledge_base",
+    "list_knowledge_bases",
+    "KnowledgeBase",
 ]
